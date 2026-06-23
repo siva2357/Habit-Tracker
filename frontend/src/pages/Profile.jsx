@@ -6,6 +6,10 @@ export default function Profile() {
   const [activeTab, setActiveTab] = useState('account');
   const { theme, setTheme } = useTheme();
 
+  const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+  const userName = userInfo.name || 'User';
+  const userEmail = userInfo.email || 'user@example.com';
+
   return (
     <div className="animate-fade-in pb-8">
       <div className="flex items-center justify-between mb-6">
@@ -50,19 +54,19 @@ export default function Profile() {
       {activeTab === 'account' && (
         <div className="card glass animate-fade-in" style={{ marginTop: '1.5rem' }}>
           <div className="mb-6 pb-6" style={{ borderBottom: '1px solid var(--border)' }}>
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>Alex Doe</h2>
-            <p style={{ margin: 0, color: 'var(--text-muted)' }}>Member since June 2026</p>
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>{userName}</h2>
+            <p style={{ margin: 0, color: 'var(--text-muted)' }}>Active Member</p>
           </div>
 
           <form style={{ maxWidth: '600px' }}>
             <div className="input-group mb-4">
               <label className="flex items-center gap-2"><User size={16} /> Full Name</label>
-              <input type="text" className="input-field" defaultValue="Alex Doe" />
+              <input type="text" className="input-field" defaultValue={userName} />
             </div>
 
             <div className="input-group mb-4">
               <label className="flex items-center gap-2"><Mail size={16} /> Email Address</label>
-              <input type="email" className="input-field" defaultValue="alex@example.com" />
+              <input type="email" className="input-field" defaultValue={userEmail} disabled style={{ opacity: 0.7 }} />
             </div>
             
             <div className="input-group mb-6">
