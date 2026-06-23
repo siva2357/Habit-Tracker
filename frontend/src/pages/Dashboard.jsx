@@ -7,10 +7,13 @@ const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 
 const renderCustomTooltip = ({ active, payload }) => {
   if (active && payload && payload.length && payload[0].name !== 'No Data') {
+    const val = payload[0].value;
+    const name = payload[0].name;
+    const isFinance = ['Income', 'Expense', 'Balance'].includes(name);
     return (
       <div className="glass p-2" style={{ borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
         <p style={{ margin: 0, color: 'var(--text-main)', fontWeight: 600 }}>
-          {payload[0].name}: {payload[0].value}
+          {name}: {isFinance ? `₹${val.toFixed(2)}` : val}
         </p>
       </div>
     );
@@ -30,6 +33,7 @@ export default function Dashboard() {
   const [transactions, setTransactions] = useState([]);
   const [exercises, setExercises] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [budget, setBudget] = useState(null);
 
   const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
   const userName = userInfo.name ? userInfo.name.split(' ')[0] : 'User';
@@ -41,6 +45,7 @@ export default function Dashboard() {
     client.get('/transactions').then(res => setTransactions(res.data)).catch(console.error);
     client.get('/exercises').then(res => setExercises(res.data)).catch(console.error);
     client.get('/projects').then(res => setProjects(res.data)).catch(console.error);
+    client.get('/budget').then(res => setBudget(res.data)).catch(console.error);
   }, []);
 
   // Filter helpers
@@ -108,15 +113,43 @@ export default function Dashboard() {
       if (t.type === 'income') income += t.amount;
       else expense += t.amount;
     });
-    const balance = income - expense;
-    if (income === 0 && expense === 0) return EmptyPieData;
-    return [
+
+    let cumulativeIncome = 0;
+    let cumulativeExpense = 0;
+    transactions.forEach(t => {
+      const tDate = new Date(t.date);
+      if (tDate.getFullYear() < currentYear || (tDate.getFullYear() === currentYear && tDate.getMonth() <= currentMonth)) {
+        if (t.type === 'income') cumulativeIncome += Number(t.amount);
+        if (t.type === 'expense') cumulativeExpense += Number(t.amount);
+      }
+    });
+
+    const startingBalance = budget ? budget.startingBalance : 0;
+    const balance = startingBalance + cumulativeIncome - cumulativeExpense;
+
+    // Show empty only if there is truly nothing to display
+    if (income === 0 && expense === 0 && balance === 0) return EmptyPieData;
+
+    const allSlices = [
       { name: 'Income', value: income, color: '#10b981' },
       { name: 'Expense', value: expense, color: '#ef4444' },
       { name: 'Balance', value: balance > 0 ? balance : 0, color: '#6366f1' },
     ];
-  }, [transactions, currentMonth, currentYear]);
-  const budgetHealth = financeData === EmptyPieData ? 0 : ((financeData[0].value - financeData[1].value) / financeData[0].value) * 100;
+    // Filter out zero-value slices — Recharts can't render them cleanly
+    const filtered = allSlices.filter(s => s.value > 0);
+    return filtered.length > 0 ? filtered : EmptyPieData;
+  }, [transactions, currentMonth, currentYear, budget]);
+  
+  const budgetHealth = useMemo(() => {
+    if (financeData === EmptyPieData) return 0;
+    const incomeSlice = financeData.find(s => s.name === 'Income');
+    const expenseSlice = financeData.find(s => s.name === 'Expense');
+    const income = incomeSlice ? incomeSlice.value : 0;
+    const expense = expenseSlice ? expenseSlice.value : 0;
+    if (income === 0) return 0;
+    const health = ((income - expense) / income) * 100;
+    return health < 0 ? 0 : Math.round(health);
+  }, [financeData]);
 
   // 5. Fitness
   const fitnessData = useMemo(() => {
@@ -150,7 +183,7 @@ export default function Dashboard() {
 
   return (
     <div className="animate-fade-in pb-8">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-8" style={{ flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1>Welcome Back, {userName}! 👋</h1>
           <p>Here's a summary of your overall progress for {months[currentMonth]} {currentYear}.</p>
@@ -221,7 +254,19 @@ export default function Dashboard() {
             <Wallet size={20} color="#ef4444" />
             <h3 style={{ fontSize: '1rem', color: 'var(--text-muted)', margin: 0 }}>Budget Health</h3>
           </div>
-          <span style={{ fontSize: '2.5rem', fontWeight: 700, color: '#ef4444', lineHeight: 1 }}>{budgetHealth > 0 ? Math.round(budgetHealth) : 0}%</span>
+          <span style={{ fontSize: '2.5rem', fontWeight: 700, color: budgetHealth >= 50 ? '#10b981' : '#ef4444', lineHeight: 1 }}>
+            {budgetHealth > 0 ? Math.round(budgetHealth) : 0}%
+          </span>
+          {financeData !== EmptyPieData && (() => {
+            const inc = financeData.find(s => s.name === 'Income');
+            const exp = financeData.find(s => s.name === 'Expense');
+            return (inc || exp) ? (
+              <div className="flex gap-3 mt-2" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                {inc && <span style={{ color: '#10b981' }}>₹{inc.value.toFixed(0)} in</span>}
+                {exp && <span style={{ color: '#ef4444' }}>₹{exp.value.toFixed(0)} out</span>}
+              </div>
+            ) : null;
+          })()}
         </div>
 
         {/* Fitness Card */}
@@ -252,8 +297,8 @@ export default function Dashboard() {
         
         <div className="card glass flex flex-col items-center">
           <h3 style={{ fontSize: '1.125rem', marginBottom: '1rem' }}>Habits Completion</h3>
-          <div style={{ width: '100%', height: 250 }}>
-            <ResponsiveContainer>
+          <div style={{ width: '100%', height: 250, minWidth: 0 }}>
+            <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={habitsData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
                   {habitsData.map((entry, index) => ( <Cell key={`cell-${index}`} fill={entry.color} stroke="none" /> ))}
@@ -267,8 +312,8 @@ export default function Dashboard() {
 
         <div className="card glass flex flex-col items-center">
           <h3 style={{ fontSize: '1.125rem', marginBottom: '1rem' }}>Tasks Execution</h3>
-          <div style={{ width: '100%', height: 250 }}>
-            <ResponsiveContainer>
+          <div style={{ width: '100%', height: 250, minWidth: 0 }}>
+            <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={tasksData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
                   {tasksData.map((entry, index) => ( <Cell key={`cell-${index}`} fill={entry.color} stroke="none" /> ))}
@@ -282,8 +327,8 @@ export default function Dashboard() {
 
         <div className="card glass flex flex-col items-center">
           <h3 style={{ fontSize: '1.125rem', marginBottom: '1rem' }}>Goals Progress</h3>
-          <div style={{ width: '100%', height: 250 }}>
-            <ResponsiveContainer>
+          <div style={{ width: '100%', height: 250, minWidth: 0 }}>
+            <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={goalsData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
                   {goalsData.map((entry, index) => ( <Cell key={`cell-${index}`} fill={entry.color} stroke="none" /> ))}
@@ -297,8 +342,8 @@ export default function Dashboard() {
 
         <div className="card glass flex flex-col items-center">
           <h3 style={{ fontSize: '1.125rem', marginBottom: '1rem' }}>Monthly Finance</h3>
-          <div style={{ width: '100%', height: 250 }}>
-            <ResponsiveContainer>
+          <div style={{ width: '100%', height: 250, minWidth: 0 }}>
+            <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={financeData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
                   {financeData.map((entry, index) => ( <Cell key={`cell-${index}`} fill={entry.color} stroke="none" /> ))}
@@ -312,8 +357,8 @@ export default function Dashboard() {
 
         <div className="card glass flex flex-col items-center">
           <h3 style={{ fontSize: '1.125rem', marginBottom: '1rem' }}>Fitness Tracking</h3>
-          <div style={{ width: '100%', height: 250 }}>
-            <ResponsiveContainer>
+          <div style={{ width: '100%', height: 250, minWidth: 0 }}>
+            <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={fitnessData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
                   {fitnessData.map((entry, index) => ( <Cell key={`cell-${index}`} fill={entry.color} stroke="none" /> ))}
@@ -327,8 +372,8 @@ export default function Dashboard() {
 
         <div className="card glass flex flex-col items-center">
           <h3 style={{ fontSize: '1.125rem', marginBottom: '1rem' }}>Project Status</h3>
-          <div style={{ width: '100%', height: 250 }}>
-            <ResponsiveContainer>
+          <div style={{ width: '100%', height: 250, minWidth: 0 }}>
+            <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={projectsData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
                   {projectsData.map((entry, index) => ( <Cell key={`cell-${index}`} fill={entry.color} stroke="none" /> ))}

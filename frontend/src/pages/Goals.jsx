@@ -149,7 +149,7 @@ export default function Goals() {
 
   return (
     <div className="animate-fade-in pb-8">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-8" style={{ flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1>Long-Term Goals</h1>
           <p>Track your major milestones with a daily progress diary.</p>

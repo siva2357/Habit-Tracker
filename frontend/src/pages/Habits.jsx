@@ -112,7 +112,7 @@ export default function Habits() {
 
   return (
     <div className="animate-fade-in">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-8" style={{ flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1>Habits Tracker</h1>
           <p>Build good habits, break the bad ones. Track every day.</p>

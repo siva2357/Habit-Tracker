@@ -111,7 +111,7 @@ export default function Fitness() {
 
   return (
     <div className="animate-fade-in pb-8">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-8" style={{ flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1>Fitness Tracker</h1>
           <p>Log your workouts and monitor your physical activity every day.</p>

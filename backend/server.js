@@ -9,6 +9,7 @@ const projectRoutes = require('./routes/projectRoutes');
 const exerciseRoutes = require('./routes/exerciseRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
 const goalRoutes = require('./routes/goalRoutes');
+const budgetRoutes = require('./routes/budgetRoutes');
 
 // Load env vars
 dotenv.config();
@@ -30,6 +31,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/exercises', exerciseRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/goals', goalRoutes);
+app.use('/api/budget', budgetRoutes);
 
 // Base route for health check
 app.get('/', (req, res) => {

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Plus, Wallet, TrendingUp, TrendingDown, Calendar as CalendarIcon, Edit2, Trash2, Download } from 'lucide-react';
+import { Plus, Wallet, TrendingUp, TrendingDown, Calendar as CalendarIcon, Edit2, Trash2, Download, Settings } from 'lucide-react';
 import client from '../api/client';
 import { Modal, Form, Button, Accordion } from 'react-bootstrap';
 
@@ -24,9 +24,11 @@ export default function Finance() {
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [transactions, setTransactions] = useState([]);
+  const [budget, setBudget] = useState(null);
 
   useEffect(() => {
     client.get('/transactions').then(res => setTransactions(res.data)).catch(console.error);
+    client.get('/budget').then(res => setBudget(res.data)).catch(console.error);
   }, []);
 
   // Modal State
@@ -39,6 +41,31 @@ export default function Finance() {
     date: getTodayDateString(),
     description: ''
   });
+
+  const [showBalanceModal, setShowBalanceModal] = useState(false);
+  const [budgetData, setBudgetData] = useState({ startingBalance: '' });
+
+  const handleOpenBalanceModal = () => {
+    if (budget) {
+      setBudgetData({ startingBalance: budget.startingBalance });
+    }
+    setShowBalanceModal(true);
+  };
+
+  const handleSaveBudget = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await client.post('/budget', {
+        startingBalance: Number(budgetData.startingBalance),
+        expectedMonthlyIncome: 0
+      });
+      setBudget(res.data);
+      setShowBalanceModal(false);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save balance settings.');
+    }
+  };
 
   const filteredTransactions = useMemo(() => {
     return transactions.filter(t => {
@@ -65,10 +92,26 @@ export default function Finance() {
     let expense = 0;
     filteredTransactions.forEach(t => {
       if (t.type === 'income') income += Number(t.amount);
-      else expense += Number(t.amount);
+      if (t.type === 'expense') expense += Number(t.amount);
     });
-    return { income, expense, balance: income - expense };
-  }, [filteredTransactions]);
+
+    // Calculate cumulative balance carrying over from previous months
+    let cumulativeIncome = 0;
+    let cumulativeExpense = 0;
+    transactions.forEach(t => {
+      const tDate = new Date(t.date);
+      // Include transactions from past months up to the currently selected month
+      if (tDate.getFullYear() < currentYear || (tDate.getFullYear() === currentYear && tDate.getMonth() <= currentMonth)) {
+        if (t.type === 'income') cumulativeIncome += Number(t.amount);
+        if (t.type === 'expense') cumulativeExpense += Number(t.amount);
+      }
+    });
+
+    const baseBalance = budget ? budget.startingBalance : 0;
+    const totalBalance = baseBalance + cumulativeIncome - cumulativeExpense;
+    
+    return { income, expense, balance: totalBalance };
+  }, [filteredTransactions, transactions, currentMonth, currentYear, budget]);
 
   const handleClose = () => {
     setShowModal(false);
@@ -123,7 +166,7 @@ export default function Finance() {
 
   return (
     <div className="animate-fade-in pb-8">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-8" style={{ flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1>Finance Tracker</h1>
           <p>Monitor your daily expenses and income across the months.</p>
@@ -163,13 +206,18 @@ export default function Finance() {
       {/* Dashboard Stats */}
       <div className="stat-cards-grid">
         <div className="glass p-4" style={{ borderRadius: 'var(--radius-xl)', border: '1px solid var(--border)' }}>
-          <div className="flex items-center gap-3 mb-2">
-            <div style={{ padding: '0.5rem', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '50%' }}>
-              <TrendingUp size={24} color="#10b981" />
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <div style={{ padding: '0.5rem', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '50%' }}>
+                <TrendingUp size={24} color="#10b981" />
+              </div>
+              <h3 style={{ fontSize: '1rem', color: 'var(--text-muted)', margin: 0 }}>Total Income</h3>
             </div>
-            <h3 style={{ fontSize: '1rem', color: 'var(--text-muted)', margin: 0 }}>Total Income</h3>
+            <button className="btn btn-outline flex items-center gap-1" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', border: 'none', color: '#10b981', background: 'rgba(16, 185, 129, 0.1)' }} onClick={() => { setFormData({ type: 'income', amount: '', category: '', date: getTodayDateString(), description: '' }); setShowModal(true); }}>
+              <Plus size={14} /> Add
+            </button>
           </div>
-          <h2 style={{ fontSize: '2rem', fontWeight: 700, margin: 0, color: '#10b981' }}>${stats.income.toFixed(2)}</h2>
+          <h2 style={{ fontSize: '2rem', fontWeight: 700, margin: 0, color: '#10b981' }}>₹{stats.income.toFixed(2)}</h2>
         </div>
 
         <div className="glass p-4" style={{ borderRadius: 'var(--radius-xl)', border: '1px solid var(--border)' }}>
@@ -179,17 +227,22 @@ export default function Finance() {
             </div>
             <h3 style={{ fontSize: '1rem', color: 'var(--text-muted)', margin: 0 }}>Total Expenses</h3>
           </div>
-          <h2 style={{ fontSize: '2rem', fontWeight: 700, margin: 0, color: '#ef4444' }}>${stats.expense.toFixed(2)}</h2>
+          <h2 style={{ fontSize: '2rem', fontWeight: 700, margin: 0, color: '#ef4444' }}>₹{stats.expense.toFixed(2)}</h2>
         </div>
 
         <div className="glass p-4" style={{ borderRadius: 'var(--radius-xl)', border: '1px solid var(--border)' }}>
-          <div className="flex items-center gap-3 mb-2">
-            <div style={{ padding: '0.5rem', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '50%' }}>
-              <Wallet size={24} color="var(--primary)" />
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <div style={{ padding: '0.5rem', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '50%' }}>
+                <Wallet size={24} color="var(--primary)" />
+              </div>
+              <h3 style={{ fontSize: '1rem', color: 'var(--text-muted)', margin: 0 }}>Net Balance</h3>
             </div>
-            <h3 style={{ fontSize: '1rem', color: 'var(--text-muted)', margin: 0 }}>Net Balance</h3>
+            <button className="btn btn-outline flex items-center gap-1" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', border: 'none', color: 'var(--primary)', background: 'rgba(99, 102, 241, 0.1)' }} onClick={handleOpenBalanceModal}>
+              <Edit2 size={14} /> Edit
+            </button>
           </div>
-          <h2 style={{ fontSize: '2rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>${stats.balance.toFixed(2)}</h2>
+          <h2 style={{ fontSize: '2rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>₹{stats.balance.toFixed(2)}</h2>
         </div>
       </div>
 
@@ -360,6 +413,37 @@ export default function Finance() {
               </Button>
               <Button variant="primary" type="submit" className="btn btn-primary flex-grow-1" style={{ width: '100%' }}>
                 {editingTransaction ? 'Save Changes' : 'Add Transaction'}
+              </Button>
+            </div>
+          </Form>
+        </Modal.Body>
+      </Modal>
+
+      {/* Balance Configuration Modal */}
+      <Modal show={showBalanceModal} onHide={() => setShowBalanceModal(false)} centered>
+        <Modal.Header closeButton style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface)' }}>
+          <Modal.Title style={{ color: 'var(--text-main)', fontSize: '1.25rem', fontWeight: 600 }}>Set Starting Balance</Modal.Title>
+        </Modal.Header>
+        <Modal.Body style={{ background: 'var(--surface)' }}>
+          <Form onSubmit={handleSaveBudget}>
+            <Form.Group className="form-group-custom">
+              <Form.Label>Starting Bank Balance</Form.Label>
+              <Form.Control
+                type="number"
+                required
+                className="input-field"
+                placeholder="e.g. 1000"
+                value={budgetData.startingBalance}
+                onChange={(e) => setBudgetData({ ...budgetData, startingBalance: e.target.value })}
+              />
+            </Form.Group>
+
+            <div className="flex justify-between items-center mt-4 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
+              <Button variant="outline-secondary" onClick={() => setShowBalanceModal(false)} className="btn btn-outline" style={{ border: 'none' }}>
+                Cancel
+              </Button>
+              <Button variant="primary" type="submit" className="btn btn-primary">
+                Save Balance
               </Button>
             </div>
           </Form>

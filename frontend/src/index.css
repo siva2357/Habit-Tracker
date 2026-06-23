@@ -263,15 +263,18 @@ input[type="checkbox"] {
   left: 100%;
   top: 50%;
   transform: translateY(-50%);
-  background: var(--text-main);
-  color: white;
-  padding: 0.25rem 0.5rem;
+  background: #1e293b;
+  color: #f8fafc;
+  padding: 0.3rem 0.65rem;
   border-radius: var(--radius-sm);
   font-size: 0.75rem;
+  font-weight: 500;
   white-space: nowrap;
-  margin-left: 0.5rem;
+  margin-left: 0.75rem;
   z-index: 100;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  pointer-events: none;
 }
 
 .sidebar.collapsed .nav-link:hover .tooltip-text {
@@ -312,11 +315,15 @@ input[type="checkbox"] {
 
 @media (max-width: 768px) {
   .sidebar {
-    display: none;
+    width: 250px;
+    transform: translateX(-100%);
+  }
+  .sidebar.open {
+    transform: translateX(0);
   }
   .main-content {
     margin-left: 0;
-    padding: 1rem 1rem 6rem 1rem; /* Extra padding at bottom for nav */
+    padding: 1rem;
   }
   .main-content.expanded {
     margin-left: 0;
@@ -408,4 +415,117 @@ input[type="checkbox"] {
   width: 1rem !important;
   height: 1rem !important;
   margin-left: 0 !important;
+}
+
+/* =============================================
+   DARK MODE: Bootstrap Component Overrides
+   ============================================= */
+
+[data-theme='dark'] .accordion-button {
+  color: var(--text-main) !important;
+  background-color: var(--surface) !important;
+}
+
+[data-theme='dark'] .accordion-button:not(.collapsed) {
+  color: var(--primary) !important;
+  background-color: rgba(99, 102, 241, 0.08) !important;
+}
+
+[data-theme='dark'] .accordion-button::after {
+  filter: invert(1) brightness(2);
+}
+
+[data-theme='dark'] .accordion-item {
+  background-color: var(--surface) !important;
+  border-color: var(--border) !important;
+  color: var(--text-main) !important;
+}
+
+[data-theme='dark'] .accordion-body {
+  background-color: var(--surface) !important;
+  color: var(--text-main) !important;
+}
+
+/* Modal overrides */
+[data-theme='dark'] .modal-content {
+  background-color: var(--surface) !important;
+  border-color: var(--border) !important;
+  color: var(--text-main) !important;
+}
+
+[data-theme='dark'] .modal-header {
+  background-color: var(--surface) !important;
+  border-bottom-color: var(--border) !important;
+  color: var(--text-main) !important;
+}
+
+[data-theme='dark'] .modal-body {
+  background-color: var(--surface) !important;
+  color: var(--text-main) !important;
+}
+
+[data-theme='dark'] .modal-footer {
+  background-color: var(--surface) !important;
+  border-top-color: var(--border) !important;
+}
+
+[data-theme='dark'] .modal-title {
+  color: var(--text-main) !important;
+}
+
+[data-theme='dark'] .btn-close {
+  filter: invert(1) brightness(2);
+}
+
+/* Form labels and text */
+[data-theme='dark'] label,
+[data-theme='dark'] .form-label {
+  color: var(--text-main) !important;
+}
+
+[data-theme='dark'] .form-control,
+[data-theme='dark'] .form-select {
+  background-color: var(--surface) !important;
+  border-color: var(--border) !important;
+  color: var(--text-main) !important;
+}
+
+[data-theme='dark'] .form-control:focus,
+[data-theme='dark'] .form-select:focus {
+  background-color: var(--surface) !important;
+  border-color: var(--primary) !important;
+  color: var(--text-main) !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15) !important;
+}
+
+[data-theme='dark'] .form-control::placeholder {
+  color: var(--text-muted) !important;
+}
+
+/* Select dropdown options */
+[data-theme='dark'] select option {
+  background-color: var(--surface) !important;
+  color: var(--text-main) !important;
+}
+
+/* Span and generic text */
+[data-theme='dark'] span,
+[data-theme='dark'] p,
+[data-theme='dark'] small {
+  color: inherit;
+}
+
+/* Card text */
+[data-theme='dark'] .card {
+  color: var(--text-main);
+}
+
+/* Nav link text in dark mode */
+[data-theme='dark'] .nav-link {
+  color: var(--text-muted);
+}
+
+[data-theme='dark'] .nav-link:hover,
+[data-theme='dark'] .nav-link.active {
+  color: var(--primary);
 }

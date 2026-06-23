@@ -16,7 +16,7 @@ import './index.css';
 
 function Sidebar({ isOpen, setIsOpen, isMobile }) {
   const navigate = useNavigate();
-  if (isMobile) return null;
+  // Sidebar now renders on all devices
 
   return (
     <>
@@ -39,37 +39,37 @@ function Sidebar({ isOpen, setIsOpen, isMobile }) {
         </div>
         
         <nav className="flex flex-col gap-2" style={{ flexDirection: 'column', flex: 1 }}>
-          <NavLink to="/" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
+          <NavLink to="/" onClick={() => isMobile && setIsOpen(false)} className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
             <Home size={20} style={{ minWidth: '20px' }} />
             <span className="nav-text">Dashboard</span>
             <span className="tooltip-text">Dashboard</span>
           </NavLink>
-          <NavLink to="/habits" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
+          <NavLink to="/habits" onClick={() => isMobile && setIsOpen(false)} className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
             <CheckSquare size={20} style={{ minWidth: '20px' }} />
             <span className="nav-text">Habits</span>
             <span className="tooltip-text">Habits</span>
           </NavLink>
-          <NavLink to="/planner" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
+          <NavLink to="/planner" onClick={() => isMobile && setIsOpen(false)} className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
             <Calendar size={20} style={{ minWidth: '20px' }} />
             <span className="nav-text">Daily Planner</span>
             <span className="tooltip-text">Daily Planner</span>
           </NavLink>
-          <NavLink to="/goals" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
+          <NavLink to="/goals" onClick={() => isMobile && setIsOpen(false)} className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
             <Target size={20} style={{ minWidth: '20px' }} />
             <span className="nav-text">Goals</span>
             <span className="tooltip-text">Goals</span>
           </NavLink>
-          <NavLink to="/projects" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
+          <NavLink to="/projects" onClick={() => isMobile && setIsOpen(false)} className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
             <Briefcase size={20} style={{ minWidth: '20px' }} />
             <span className="nav-text">Projects</span>
             <span className="tooltip-text">Projects</span>
           </NavLink>
-          <NavLink to="/fitness" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
+          <NavLink to="/fitness" onClick={() => isMobile && setIsOpen(false)} className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
             <Activity size={20} style={{ minWidth: '20px' }} />
             <span className="nav-text">Fitness</span>
             <span className="tooltip-text">Fitness</span>
           </NavLink>
-          <NavLink to="/finance" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
+          <NavLink to="/finance" onClick={() => isMobile && setIsOpen(false)} className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
             <Wallet size={20} style={{ minWidth: '20px' }} />
             <span className="nav-text">Finance</span>
             <span className="tooltip-text">Finance</span>
@@ -77,7 +77,7 @@ function Sidebar({ isOpen, setIsOpen, isMobile }) {
         </nav>
 
         <div className="sidebar-footer" style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem', marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <NavLink to="/profile" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
+          <NavLink to="/profile" onClick={() => isMobile && setIsOpen(false)} className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
             <User size={20} style={{ minWidth: '20px' }} />
             <span className="nav-text">Profile</span>
             <span className="tooltip-text">Profile</span>
@@ -93,43 +93,28 @@ function Sidebar({ isOpen, setIsOpen, isMobile }) {
   );
 }
 
-function BottomNav() {
-  return (
-    <nav className="bottom-nav" style={{ padding: '0 0.25rem' }}>
-      <NavLink to="/" className={({isActive}) => isActive ? "bottom-nav-link active" : "bottom-nav-link"} style={{ padding: '0.5rem 0.25rem' }}>
-        <Home size={22} />
-      </NavLink>
-      <NavLink to="/habits" className={({isActive}) => isActive ? "bottom-nav-link active" : "bottom-nav-link"} style={{ padding: '0.5rem 0.25rem' }}>
-        <CheckSquare size={22} />
-      </NavLink>
-      <NavLink to="/planner" className={({isActive}) => isActive ? "bottom-nav-link active" : "bottom-nav-link"} style={{ padding: '0.5rem 0.25rem' }}>
-        <Calendar size={22} />
-      </NavLink>
-      <NavLink to="/projects" className={({isActive}) => isActive ? "bottom-nav-link active" : "bottom-nav-link"} style={{ padding: '0.5rem 0.25rem' }}>
-        <Briefcase size={22} />
-      </NavLink>
-      <NavLink to="/fitness" className={({isActive}) => isActive ? "bottom-nav-link active" : "bottom-nav-link"} style={{ padding: '0.5rem 0.25rem' }}>
-        <Activity size={22} />
-      </NavLink>
-      <NavLink to="/finance" className={({isActive}) => isActive ? "bottom-nav-link active" : "bottom-nav-link"} style={{ padding: '0.5rem 0.25rem' }}>
-        <Wallet size={22} />
-      </NavLink>
-      <NavLink to="/profile" className={({isActive}) => isActive ? "bottom-nav-link active" : "bottom-nav-link"} style={{ padding: '0.5rem 0.25rem' }}>
-        <User size={22} />
-      </NavLink>
-    </nav>
-  );
-}
-
 function AppContent({ isOpen, setIsOpen, isMobile }) {
   const location = useLocation();
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
 
   return (
     <div className="page-layout">
+      {!isAuthPage && isMobile && isOpen && (
+        <div className="sidebar-overlay" onClick={() => setIsOpen(false)} />
+      )}
       {!isAuthPage && <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} isMobile={isMobile} />}
       <main className={`main-content ${!isOpen && !isMobile && !isAuthPage ? 'expanded' : ''}`} style={isAuthPage ? { marginLeft: 0, padding: 0 } : {}}>
-        {isMobile && !isAuthPage && <BottomNav />}
+        {isMobile && !isAuthPage && (
+          <div className="flex items-center p-3 glass mb-4" style={{ borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
+            <button className="btn btn-outline" style={{ padding: '0.25rem', border: 'none' }} onClick={() => setIsOpen(true)}>
+              <Menu size={24} color="var(--primary)" />
+            </button>
+            <div className="flex items-center gap-2 brand-text" style={{ marginLeft: '0.5rem' }}>
+              <Activity size={24} color="var(--primary)" />
+              <h2 style={{ marginBottom: 0, fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.5px' }}>TrackIt</h2>
+            </div>
+          </div>
+        )}
         <Routes>
           <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/habits" element={<ProtectedRoute><Habits /></ProtectedRoute>} />
