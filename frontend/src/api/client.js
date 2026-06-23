@@ -21,4 +21,16 @@ client.interceptors.request.use(
   }
 );
 
+// Add a response interceptor to log users out if their token expires or is invalid
+client.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('userInfo');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default client;

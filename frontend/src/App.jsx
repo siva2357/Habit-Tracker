@@ -11,6 +11,7 @@ import Finance from './pages/Finance';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
+import ProtectedRoute from './components/ProtectedRoute';
 import './index.css';
 
 function Sidebar({ isOpen, setIsOpen, isMobile }) {
@@ -130,16 +131,16 @@ function AppContent({ isOpen, setIsOpen, isMobile }) {
       <main className={`main-content ${!isOpen && !isMobile && !isAuthPage ? 'expanded' : ''}`} style={isAuthPage ? { marginLeft: 0, padding: 0 } : {}}>
         {isMobile && !isAuthPage && <BottomNav />}
         <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/habits" element={<Habits />} />
-          <Route path="/planner" element={<Planner />} />
-          <Route path="/goals" element={<Goals />} />
-          <Route path="/projects" element={<Projects />} />
-          <Route path="/fitness" element={<Fitness />} />
-          <Route path="/finance" element={<Finance />} />
+          <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/habits" element={<ProtectedRoute><Habits /></ProtectedRoute>} />
+          <Route path="/planner" element={<ProtectedRoute><Planner /></ProtectedRoute>} />
+          <Route path="/goals" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
+          <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
+          <Route path="/fitness" element={<ProtectedRoute><Fitness /></ProtectedRoute>} />
+          <Route path="/finance" element={<ProtectedRoute><Finance /></ProtectedRoute>} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         </Routes>
       </main>
     </div>

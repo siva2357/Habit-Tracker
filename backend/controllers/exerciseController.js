@@ -2,14 +2,14 @@ const Exercise = require('../models/Exercise');
 
 exports.getAll = async (req, res) => {
   try {
-    const items = await Exercise.find().sort({ createdAt: -1 });
+    const items = await Exercise.find({ user: req.user._id }).sort({ createdAt: -1 });
     res.json(items);
   } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
 exports.create = async (req, res) => {
   try {
-    const newItem = new Exercise(req.body);
+    const newItem = new Exercise({ ...req.body, user: req.user._id });
     const saved = await newItem.save();
     res.status(201).json(saved);
   } catch (err) { res.status(400).json({ error: err.message }); }
@@ -17,14 +17,20 @@ exports.create = async (req, res) => {
 
 exports.update = async (req, res) => {
   try {
-    const updated = await Exercise.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updated = await Exercise.findOneAndUpdate(
+      { _id: req.params.id, user: req.user._id },
+      req.body,
+      { new: true }
+    );
+    if (!updated) return res.status(401).json({ message: 'Not authorized or not found' });
     res.json(updated);
   } catch (err) { res.status(400).json({ error: err.message }); }
 };
 
 exports.delete = async (req, res) => {
   try {
-    await Exercise.findByIdAndDelete(req.params.id);
+    const deleted = await Exercise.findOneAndDelete({ _id: req.params.id, user: req.user._id });
+    if (!deleted) return res.status(401).json({ message: 'Not authorized or not found' });
     res.json({ success: true });
   } catch (err) { res.status(400).json({ error: err.message }); }
 };
