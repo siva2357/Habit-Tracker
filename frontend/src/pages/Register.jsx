@@ -1,17 +1,25 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Activity } from 'lucide-react';
+import client from '../api/client';
 
 export default function Register() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
-    // Simulate registration
-    navigate('/');
+    setError('');
+    try {
+      const res = await client.post('/users/register', { name: fullName, email, password });
+      localStorage.setItem('userInfo', JSON.stringify(res.data));
+      navigate('/');
+    } catch (err) {
+      setError(err.response?.data?.message || err.response?.data?.error || 'Registration failed. Please try again.');
+    }
   };
 
   return (
@@ -27,6 +35,8 @@ export default function Register() {
           <p style={{ margin: 0, fontSize: '0.875rem', marginBottom: '1.5rem' }}>Create an account to start tracking your life.</p>
         </div>
         
+        {error && <div style={{ color: 'var(--danger)', backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '0.75rem', borderRadius: 'var(--radius-md)', marginBottom: '1rem', textAlign: 'center', fontSize: '0.875rem' }}>{error}</div>}
+
         <form onSubmit={handleRegister}>
           <div className="input-group">
             <label>Full Name</label>

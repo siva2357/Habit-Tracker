@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Plus, Activity, Edit2, Trash2, Calendar as CalendarIcon, Download, Flame, Clock } from 'lucide-react';
+import client from '../api/client';
 import { Modal, Form, Button, Accordion } from 'react-bootstrap';
 
 // Helper to get days in a specific month
@@ -12,12 +13,7 @@ const formatDateKey = (year, month, day) => {
 
 const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-const initialExercises = [
-  { id: 1, name: 'Morning Jog', duration: 30, calories: 300, date: '2026-06-01' },
-  { id: 2, name: 'Pushups & Core', duration: 15, calories: 120, date: '2026-06-01' },
-  { id: 3, name: 'Yoga Session', duration: 45, calories: 200, date: '2026-06-02' },
-  { id: 4, name: 'HIIT Workout', duration: 20, calories: 350, date: '2026-06-05' },
-];
+// No initial mock data, we fetch from API
 
 const getTodayDateString = () => {
   const today = new Date();
@@ -27,7 +23,11 @@ const getTodayDateString = () => {
 export default function Fitness() {
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
-  const [exercises, setExercises] = useState(initialExercises);
+  const [exercises, setExercises] = useState([]);
+
+  useEffect(() => {
+    client.get('/exercises').then(res => setExercises(res.data)).catch(console.error);
+  }, []);
 
   // Modal State
   const [showModal, setShowModal] = useState(false);
@@ -80,26 +80,33 @@ export default function Fitness() {
     setShowModal(true);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name || !formData.duration || !formData.date) return;
 
-    if (editingExercise) {
-      setExercises(exercises.map(ex => 
-        ex.id === editingExercise.id ? { ...formData, id: ex.id } : ex
-      ));
-    } else {
-      const newExercise = {
-        ...formData,
-        id: Date.now()
-      };
-      setExercises([newExercise, ...exercises]);
+    try {
+      if (editingExercise) {
+        const res = await client.put(`/exercises/${editingExercise._id}`, formData);
+        setExercises(exercises.map(ex => ex._id === editingExercise._id ? res.data : ex));
+      } else {
+        const res = await client.post('/exercises', formData);
+        setExercises([res.data, ...exercises]);
+      }
+      handleClose();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save exercise.');
     }
-    handleClose();
   };
 
-  const handleDelete = (id) => {
-    setExercises(exercises.filter(ex => ex.id !== id));
+  const handleDelete = async (id) => {
+    try {
+      await client.delete(`/exercises/${id}`);
+      setExercises(exercises.filter(ex => ex._id !== id));
+    } catch (err) {
+      console.error(err);
+      alert('Failed to delete exercise.');
+    }
   };
 
   return (
@@ -109,6 +116,9 @@ export default function Fitness() {
           <h1>Fitness Tracker</h1>
           <p>Log your workouts and monitor your physical activity every day.</p>
         </div>
+        <button className="btn btn-primary" onClick={() => handleShow()}>
+          <Plus size={18} /> Add Exercise
+        </button>
       </div>
 
       {/* Month/Year Selector and Actions */}
@@ -197,27 +207,29 @@ export default function Fitness() {
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {dayExercises.map(ex => (
-                      <div key={ex.id} className="flex items-center justify-between p-3" style={{ background: 'var(--background)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
-                        <div className="flex items-center gap-3">
-                          <div style={{ padding: '0.5rem', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '50%' }}>
-                            <Activity size={18} color="#10b981" />
+                      <div key={ex._id} className="flex items-center justify-between p-3" style={{ background: 'var(--background)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
+                        <div className="flex items-center gap-4">
+                          <div style={{ padding: '0.75rem', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '50%' }}>
+                            <Activity size={20} color="var(--primary)" />
                           </div>
                           <div>
-                            <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>{ex.name}</h4>
-                            <div className="flex items-center gap-3 mt-1">
-                              <span className="flex items-center gap-1" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}><Clock size={12} /> {ex.duration} mins</span>
-                              <span className="flex items-center gap-1" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}><Flame size={12} /> {ex.calories} kcal</span>
+                            <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>{ex.name}</h4>
+                            <div className="flex items-center gap-3 mt-1" style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                              <span className="flex items-center gap-1"><Clock size={12} /> {ex.duration} min</span>
+                              <span className="flex items-center gap-1"><Flame size={12} /> {ex.calories} kcal</span>
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <button className="btn btn-outline" style={{ padding: '0.4rem', border: 'none', borderRadius: '50%' }} onClick={() => handleShow(ex)}>
-                            <Edit2 size={16} />
-                          </button>
-                          <button className="btn btn-outline" style={{ padding: '0.4rem', border: 'none', borderRadius: '50%', color: 'var(--danger)' }} onClick={() => handleDelete(ex.id)}>
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
+                        {isToday && (
+                          <div className="flex gap-2">
+                            <button className="btn btn-outline" style={{ padding: '0.4rem', border: 'none', borderRadius: '50%' }} onClick={() => handleShow(ex)}>
+                              <Edit2 size={16} />
+                            </button>
+                            <button className="btn btn-outline" style={{ padding: '0.4rem', border: 'none', borderRadius: '50%', color: 'var(--danger)' }} onClick={() => handleDelete(ex._id)}>
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

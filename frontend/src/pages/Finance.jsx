@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Plus, Wallet, TrendingUp, TrendingDown, Calendar as CalendarIcon, Edit2, Trash2, Download } from 'lucide-react';
+import client from '../api/client';
 import { Modal, Form, Button, Accordion } from 'react-bootstrap';
 
 // Helper to get days in a specific month
@@ -12,12 +13,7 @@ const formatDateKey = (year, month, day) => {
 
 const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-const initialTransactions = [
-  { id: 1, type: 'income', amount: 5000, category: 'Salary', date: '2026-06-01', description: 'June Salary' },
-  { id: 2, type: 'expense', amount: 1500, category: 'Rent', date: '2026-06-02', description: 'Monthly Rent' },
-  { id: 3, type: 'expense', amount: 300, category: 'Groceries', date: '2026-06-05', description: 'Supermarket' },
-  { id: 4, type: 'expense', amount: 50, category: 'Entertainment', date: '2026-06-10', description: 'Movie Tickets' },
-];
+// No initial mock data, we fetch from API
 
 const getTodayDateString = () => {
   const today = new Date();
@@ -27,7 +23,11 @@ const getTodayDateString = () => {
 export default function Finance() {
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
-  const [transactions, setTransactions] = useState(initialTransactions);
+  const [transactions, setTransactions] = useState([]);
+
+  useEffect(() => {
+    client.get('/transactions').then(res => setTransactions(res.data)).catch(console.error);
+  }, []);
 
   // Modal State
   const [showModal, setShowModal] = useState(false);
@@ -92,26 +92,33 @@ export default function Finance() {
     setShowModal(true);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.amount || !formData.category || !formData.date) return;
 
-    if (editingTransaction) {
-      setTransactions(transactions.map(t => 
-        t.id === editingTransaction.id ? { ...formData, id: t.id } : t
-      ));
-    } else {
-      const newTransaction = {
-        ...formData,
-        id: Date.now()
-      };
-      setTransactions([newTransaction, ...transactions]);
+    try {
+      if (editingTransaction) {
+        const res = await client.put(`/transactions/${editingTransaction._id}`, formData);
+        setTransactions(transactions.map(t => t._id === editingTransaction._id ? res.data : t));
+      } else {
+        const res = await client.post('/transactions', formData);
+        setTransactions([res.data, ...transactions]);
+      }
+      handleClose();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save transaction.');
     }
-    handleClose();
   };
 
-  const handleDelete = (id) => {
-    setTransactions(transactions.filter(t => t.id !== id));
+  const handleDelete = async (id) => {
+    try {
+      await client.delete(`/transactions/${id}`);
+      setTransactions(transactions.filter(t => t._id !== id));
+    } catch (err) {
+      console.error(err);
+      alert('Failed to delete transaction.');
+    }
   };
 
   return (
@@ -244,7 +251,7 @@ export default function Finance() {
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {dayTransactions.map(t => (
-                      <div key={t.id} className="flex items-center justify-between p-3" style={{ background: 'var(--background)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
+                      <div key={t._id} className="flex items-center justify-between p-3" style={{ background: 'var(--background)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
                         <div className="flex items-center gap-4">
                           <div style={{ padding: '0.75rem', background: t.type === 'income' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', borderRadius: '50%' }}>
                             {t.type === 'income' ? <TrendingUp size={20} color="#10b981" /> : <TrendingDown size={20} color="#ef4444" />}
@@ -263,7 +270,7 @@ export default function Finance() {
                               <button className="btn btn-outline" style={{ padding: '0.4rem', border: 'none', borderRadius: '50%' }} onClick={() => handleShow(t)}>
                                 <Edit2 size={16} />
                               </button>
-                              <button className="btn btn-outline" style={{ padding: '0.4rem', border: 'none', borderRadius: '50%', color: 'var(--danger)' }} onClick={() => handleDelete(t.id)}>
+                              <button className="btn btn-outline" style={{ padding: '0.4rem', border: 'none', borderRadius: '50%', color: 'var(--danger)' }} onClick={() => handleDelete(t._id)}>
                                 <Trash2 size={16} />
                               </button>
                             </div>

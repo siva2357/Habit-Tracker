@@ -1,24 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Briefcase, Edit2, Trash2, BookOpen } from 'lucide-react';
+import client from '../api/client';
 import { Modal, Form, Button, Accordion } from 'react-bootstrap';
-
-const initialProjects = [
-  { 
-    id: 1, 
-    title: 'Build Portfolio Website', 
-    status: 'In Progress', 
-    updates: [
-      { id: 1, date: '2026-06-20', title: 'Started Design', text: 'Created the wireframes for the homepage and about section.' },
-      { id: 2, date: '2026-06-21', title: 'Setup Repository', text: 'Initialized Vite React project and configured styling.' }
-    ] 
-  },
-  { 
-    id: 2, 
-    title: 'Learn Advanced TypeScript', 
-    status: 'Pending', 
-    updates: [] 
-  },
-];
 
 const getTodayDateString = () => {
   const today = new Date();
@@ -26,7 +9,11 @@ const getTodayDateString = () => {
 };
 
 export default function Projects() {
-  const [projects, setProjects] = useState(initialProjects);
+  const [projects, setProjects] = useState([]);
+  
+  useEffect(() => {
+    client.get('/projects').then(res => setProjects(res.data)).catch(console.error);
+  }, []);
   
   // Project Modal State
   const [showModal, setShowModal] = useState(false);
@@ -54,32 +41,41 @@ export default function Projects() {
     setShowModal(true);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (editingProject) {
-      setProjects(projects.map(p => 
-        p.id === editingProject.id ? { ...p, title: formData.title, status: formData.status } : p
-      ));
-    } else {
-      const newProject = {
-        id: Date.now(),
-        title: formData.title,
-        status: formData.status,
-        updates: []
-      };
-      setProjects([...projects, newProject]);
+    try {
+      if (editingProject) {
+        const res = await client.put(`/projects/${editingProject._id}`, formData);
+        setProjects(projects.map(p => p._id === editingProject._id ? res.data : p));
+      } else {
+        const res = await client.post('/projects', { ...formData, updates: [] });
+        setProjects([...projects, res.data]);
+      }
+      handleClose();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save project.');
     }
-    handleClose();
   };
 
-  const handleDelete = (id) => {
-    setProjects(projects.filter(p => p.id !== id));
+  const handleDelete = async (id) => {
+    try {
+      await client.delete(`/projects/${id}`);
+      setProjects(projects.filter(p => p._id !== id));
+    } catch (err) {
+      console.error(err);
+      alert('Failed to delete project.');
+    }
   };
 
-  const handleStatusChange = (projectId, newStatus) => {
-    setProjects(projects.map(p => 
-      p.id === projectId ? { ...p, status: newStatus } : p
-    ));
+  const handleStatusChange = async (projectId, newStatus) => {
+    try {
+      const res = await client.put(`/projects/${projectId}`, { status: newStatus });
+      setProjects(projects.map(p => p._id === projectId ? res.data : p));
+    } catch (err) {
+      console.error(err);
+      alert('Failed to update status.');
+    }
   };
 
   // Progress Modal Handlers
@@ -99,42 +95,48 @@ export default function Projects() {
     setShowProgressModal(true);
   };
 
-  const handleProgressSubmit = (e) => {
+  const handleProgressSubmit = async (e) => {
     e.preventDefault();
     if (!progressFormData.title.trim() || !progressFormData.text.trim()) return;
 
-    setProjects(projects.map(p => {
-      if (p.id === activeProjectId) {
-        if (editingProgress) {
-          // Update existing progress
-          const updatedUpdates = p.updates.map(entry => 
-            entry.id === editingProgress.id ? { ...entry, title: progressFormData.title, text: progressFormData.text } : entry
-          );
-          return { ...p, updates: updatedUpdates };
-        } else {
-          // Add new progress
-          const newEntry = {
-            id: Date.now(),
-            date: getTodayDateString(),
-            title: progressFormData.title.trim(),
-            text: progressFormData.text.trim()
-          };
-          return { ...p, updates: [newEntry, ...p.updates] };
-        }
+    try {
+      const p = projects.find(proj => proj._id === activeProjectId);
+      if (!p) return;
+      
+      let updatedUpdates;
+      if (editingProgress) {
+        updatedUpdates = p.updates.map(entry => 
+          entry._id === editingProgress._id ? { ...entry, title: progressFormData.title.trim(), text: progressFormData.text.trim() } : entry
+        );
+      } else {
+        const newEntry = {
+          date: getTodayDateString(),
+          title: progressFormData.title.trim(),
+          text: progressFormData.text.trim()
+        };
+        updatedUpdates = [newEntry, ...p.updates];
       }
-      return p;
-    }));
 
-    handleCloseProgressModal();
+      const res = await client.put(`/projects/${activeProjectId}`, { updates: updatedUpdates });
+      setProjects(projects.map(proj => proj._id === activeProjectId ? res.data : proj));
+      handleCloseProgressModal();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save update.');
+    }
   };
 
-  const handleDeleteProgress = (projectId, progressId) => {
-    setProjects(projects.map(p => {
-      if (p.id === projectId) {
-        return { ...p, updates: p.updates.filter(entry => entry.id !== progressId) };
-      }
-      return p;
-    }));
+  const handleDeleteProgress = async (projectId, progressId) => {
+    try {
+      const p = projects.find(proj => proj._id === projectId);
+      if (!p) return;
+      const updatedUpdates = p.updates.filter(entry => entry._id !== progressId);
+      const res = await client.put(`/projects/${projectId}`, { updates: updatedUpdates });
+      setProjects(projects.map(proj => proj._id === projectId ? res.data : proj));
+    } catch (err) {
+      console.error(err);
+      alert('Failed to delete update.');
+    }
   };
 
   const getStatusColor = (status) => {
@@ -159,7 +161,7 @@ export default function Projects() {
 
       <Accordion>
         {projects.map(project => (
-          <Accordion.Item eventKey={project.id.toString()} key={project.id} className="glass mb-3" style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+          <Accordion.Item eventKey={project._id} key={project._id} className="glass mb-3" style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
             <Accordion.Header>
               <div className="flex items-center justify-between w-100" style={{ paddingRight: '1.5rem' }}>
                 <div className="flex items-center gap-3">
@@ -181,7 +183,7 @@ export default function Projects() {
                   <label style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-muted)' }}>Update Status:</label>
                   <select 
                     value={project.status} 
-                    onChange={(e) => handleStatusChange(project.id, e.target.value)}
+                    onChange={(e) => handleStatusChange(project._id, e.target.value)}
                     className="form-select"
                     style={{ width: 'auto', background: 'var(--background)', color: 'var(--text-main)', border: '1px solid var(--border)' }}
                   >
@@ -194,7 +196,7 @@ export default function Projects() {
                   <button className="btn btn-outline" style={{ padding: '0.25rem 0.75rem', fontSize: '0.875rem' }} onClick={() => handleShow(project)}>
                     <Edit2 size={14} className="mr-1" /> Edit
                   </button>
-                  <button className="btn btn-outline" style={{ padding: '0.25rem 0.75rem', fontSize: '0.875rem', color: 'var(--danger)' }} onClick={() => handleDelete(project.id)}>
+                  <button className="btn btn-outline" style={{ padding: '0.25rem 0.75rem', fontSize: '0.875rem', color: 'var(--danger)' }} onClick={() => handleDelete(project._id)}>
                     <Trash2 size={14} className="mr-1" /> Delete
                   </button>
                 </div>
@@ -206,7 +208,7 @@ export default function Projects() {
                   <h3 className="flex items-center gap-2 m-0" style={{ fontSize: '1.125rem', fontWeight: 600 }}>
                     <Briefcase size={18} color="var(--primary)" /> Progress Updates
                   </h3>
-                  <button className="btn btn-primary" style={{ padding: '0.25rem 0.75rem', fontSize: '0.875rem' }} onClick={() => handleShowProgressModal(project.id)}>
+                  <button className="btn btn-primary" style={{ padding: '0.25rem 0.75rem', fontSize: '0.875rem' }} onClick={() => handleShowProgressModal(project._id)}>
                     <Plus size={16} className="mr-1" /> Add Progress
                   </button>
                 </div>
@@ -219,7 +221,7 @@ export default function Projects() {
                     </div>
                   ) : (
                     project.updates.map(entry => (
-                      <div key={entry.id} className="glass" style={{ padding: '1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--background)', width: '100%' }}>
+                      <div key={entry._id} className="glass" style={{ padding: '1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--background)', width: '100%' }}>
                         <div className="flex items-center justify-between mb-2">
                           <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-main)' }}>{entry.title}</h4>
                           <div className="flex items-center gap-3">
@@ -227,10 +229,10 @@ export default function Projects() {
                               {entry.date}
                             </span>
                             <div className="flex items-center gap-1">
-                              <button className="btn btn-outline" style={{ padding: '0.25rem', border: 'none', borderRadius: '50%' }} onClick={() => handleShowProgressModal(project.id, entry)}>
+                              <button className="btn btn-outline" style={{ padding: '0.25rem', border: 'none', borderRadius: '50%' }} onClick={() => handleShowProgressModal(project._id, entry)}>
                                 <Edit2 size={14} />
                               </button>
-                              <button className="btn btn-outline" style={{ padding: '0.25rem', border: 'none', borderRadius: '50%', color: 'var(--danger)' }} onClick={() => handleDeleteProgress(project.id, entry.id)}>
+                              <button className="btn btn-outline" style={{ padding: '0.25rem', border: 'none', borderRadius: '50%', color: 'var(--danger)' }} onClick={() => handleDeleteProgress(project._id, entry._id)}>
                                 <Trash2 size={14} />
                               </button>
                             </div>

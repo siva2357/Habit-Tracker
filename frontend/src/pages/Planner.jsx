@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Plus, Clock, Circle, CheckCircle2, Edit2, Trash2, Calendar as CalendarIcon, Download } from 'lucide-react';
+import client from '../api/client';
 import { Modal, Form, Button, Accordion } from 'react-bootstrap';
 
 // Helper to get days in a specific month
@@ -20,18 +21,21 @@ const months = [
   "July", "August", "September", "October", "November", "December"
 ];
 
-// Initial mock data using today's date so something shows up
-const todayString = getTodayDateString();
-const initialTasks = {
-  [todayString]: [
-    { id: 1, title: 'Team Sync Meeting', time: '09:00 AM', completed: true },
-    { id: 2, title: 'Work on Frontend UI', time: '10:30 AM', completed: false },
-    { id: 3, title: 'Lunch Break', time: '01:00 PM', completed: false },
-  ]
-};
+// No initial mock data
 
 export default function Planner() {
-  const [tasksByDate, setTasksByDate] = useState(initialTasks);
+  const [tasksByDate, setTasksByDate] = useState({});
+  
+  useEffect(() => {
+    client.get('/tasks').then(res => {
+      const grouped = {};
+      res.data.forEach(t => {
+        if (!grouped[t.dateKey]) grouped[t.dateKey] = [];
+        grouped[t.dateKey].push(t);
+      });
+      setTasksByDate(grouped);
+    }).catch(console.error);
+  }, []);
   
   // Calendar State
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
@@ -62,48 +66,57 @@ export default function Planner() {
     setShowModal(true);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const currentDayTasks = tasksByDate[activeDateKey] || [];
     
-    if (editingTask) {
-      setTasksByDate({
-        ...tasksByDate,
-        [activeDateKey]: currentDayTasks.map(t => 
-          t.id === editingTask.id ? { ...t, title: formData.title, time: formData.time } : t
-        )
-      });
-    } else {
-      const newTask = {
-        id: Date.now(),
-        title: formData.title,
-        time: formData.time,
-        completed: false
-      };
-      setTasksByDate({
-        ...tasksByDate,
-        [activeDateKey]: [...currentDayTasks, newTask]
-      });
+    try {
+      if (editingTask) {
+        const res = await client.put(`/tasks/${editingTask._id}`, formData);
+        setTasksByDate({
+          ...tasksByDate,
+          [activeDateKey]: currentDayTasks.map(t => t._id === editingTask._id ? res.data : t)
+        });
+      } else {
+        const res = await client.post('/tasks', { ...formData, dateKey: activeDateKey });
+        setTasksByDate({
+          ...tasksByDate,
+          [activeDateKey]: [...currentDayTasks, res.data]
+        });
+      }
+      handleClose();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save task.');
     }
-    handleClose();
   };
 
-  const handleDelete = (dateKey, taskId) => {
-    const currentDayTasks = tasksByDate[dateKey] || [];
-    setTasksByDate({
-      ...tasksByDate,
-      [dateKey]: currentDayTasks.filter(t => t.id !== taskId)
-    });
+  const handleDelete = async (dateKey, taskId) => {
+    try {
+      await client.delete(`/tasks/${taskId}`);
+      const currentDayTasks = tasksByDate[dateKey] || [];
+      setTasksByDate({
+        ...tasksByDate,
+        [dateKey]: currentDayTasks.filter(t => t._id !== taskId)
+      });
+    } catch (err) {
+      console.error(err);
+      alert('Failed to delete task.');
+    }
   };
 
-  const toggleTask = (dateKey, taskId) => {
-    const currentDayTasks = tasksByDate[dateKey] || [];
-    setTasksByDate({
-      ...tasksByDate,
-      [dateKey]: currentDayTasks.map(t => 
-        t.id === taskId ? { ...t, completed: !t.completed } : t
-      )
-    });
+  const toggleTask = async (dateKey, taskId) => {
+    try {
+      const currentDayTasks = tasksByDate[dateKey] || [];
+      const task = currentDayTasks.find(t => t._id === taskId);
+      const res = await client.put(`/tasks/${taskId}`, { completed: !task.completed });
+      setTasksByDate({
+        ...tasksByDate,
+        [dateKey]: currentDayTasks.map(t => t._id === taskId ? res.data : t)
+      });
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -186,7 +199,7 @@ export default function Planner() {
                     )}
 
                     {tasks.map((task, index) => (
-                      <div key={task.id} style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start' }}>
+                      <div key={task._id} style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start' }}>
                         <div style={{ width: '80px', textAlign: 'right', paddingTop: '0.25rem', color: 'var(--text-muted)', fontSize: '0.875rem', fontWeight: 500 }}>
                           {task.time}
                         </div>
@@ -212,7 +225,7 @@ export default function Planner() {
                           }}
                         >
                           <div 
-                            onClick={() => toggleTask(dateKey, task.id)}
+                            onClick={() => toggleTask(dateKey, task._id)}
                             className="flex items-center gap-3" 
                             style={{ cursor: 'pointer', textDecoration: task.completed ? 'line-through' : 'none' }}
                           >
@@ -227,7 +240,7 @@ export default function Planner() {
                             <button className="btn btn-outline" style={{ padding: '0.25rem', borderRadius: '50%', border: 'none' }} onClick={() => handleShow(dateKey, task)}>
                               <Edit2 size={16} />
                             </button>
-                            <button className="btn btn-outline" style={{ padding: '0.25rem', borderRadius: '50%', border: 'none', color: 'var(--danger)' }} onClick={() => handleDelete(dateKey, task.id)}>
+                            <button className="btn btn-outline" style={{ padding: '0.25rem', borderRadius: '50%', border: 'none', color: 'var(--danger)' }} onClick={() => handleDelete(dateKey, task._id)}>
                               <Trash2 size={16} />
                             </button>
                           </div>

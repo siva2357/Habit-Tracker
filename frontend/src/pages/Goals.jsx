@@ -1,24 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Target, Edit2, Trash2, BookOpen, Send, CheckCircle } from 'lucide-react';
+import client from '../api/client';
 import { Modal, Form, Button, Accordion } from 'react-bootstrap';
-
-const initialGoals = [
-  { 
-    id: 1, 
-    title: 'Learn React', 
-    status: 'In Progress', 
-    diary: [
-      { id: 1, date: '2026-06-20', title: 'Started Basics', text: 'Started reading the official documentation and built a counter app.' },
-      { id: 2, date: '2026-06-21', title: 'React Hooks', text: 'Learned about hooks, specifically useState and useEffect.' }
-    ] 
-  },
-  { 
-    id: 2, 
-    title: 'Run a Marathon', 
-    status: 'Pending', 
-    diary: [] 
-  },
-];
 
 const getTodayDateString = () => {
   const today = new Date();
@@ -26,7 +9,11 @@ const getTodayDateString = () => {
 };
 
 export default function Goals() {
-  const [goals, setGoals] = useState(initialGoals);
+  const [goals, setGoals] = useState([]);
+  
+  useEffect(() => {
+    client.get('/goals').then(res => setGoals(res.data)).catch(console.error);
+  }, []);
   
   // Goal Modal State
   const [showModal, setShowModal] = useState(false);
@@ -54,32 +41,41 @@ export default function Goals() {
     setShowModal(true);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (editingGoal) {
-      setGoals(goals.map(g => 
-        g.id === editingGoal.id ? { ...g, title: formData.title, status: formData.status } : g
-      ));
-    } else {
-      const newGoal = {
-        id: Date.now(),
-        title: formData.title,
-        status: formData.status,
-        diary: []
-      };
-      setGoals([...goals, newGoal]);
+    try {
+      if (editingGoal) {
+        const res = await client.put(`/goals/${editingGoal._id}`, formData);
+        setGoals(goals.map(g => g._id === editingGoal._id ? res.data : g));
+      } else {
+        const res = await client.post('/goals', { ...formData, diary: [] });
+        setGoals([...goals, res.data]);
+      }
+      handleClose();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save goal.');
     }
-    handleClose();
   };
 
-  const handleDelete = (id) => {
-    setGoals(goals.filter(g => g.id !== id));
+  const handleDelete = async (id) => {
+    try {
+      await client.delete(`/goals/${id}`);
+      setGoals(goals.filter(g => g._id !== id));
+    } catch (err) {
+      console.error(err);
+      alert('Failed to delete goal.');
+    }
   };
 
-  const handleStatusChange = (goalId, newStatus) => {
-    setGoals(goals.map(g => 
-      g.id === goalId ? { ...g, status: newStatus } : g
-    ));
+  const handleStatusChange = async (goalId, newStatus) => {
+    try {
+      const res = await client.put(`/goals/${goalId}`, { status: newStatus });
+      setGoals(goals.map(g => g._id === goalId ? res.data : g));
+    } catch (err) {
+      console.error(err);
+      alert('Failed to update status.');
+    }
   };
 
   // Progress Modal Handlers
@@ -99,42 +95,48 @@ export default function Goals() {
     setShowProgressModal(true);
   };
 
-  const handleProgressSubmit = (e) => {
+  const handleProgressSubmit = async (e) => {
     e.preventDefault();
     if (!progressFormData.title.trim() || !progressFormData.text.trim()) return;
 
-    setGoals(goals.map(g => {
-      if (g.id === activeGoalId) {
-        if (editingProgress) {
-          // Update existing progress
-          const updatedDiary = g.diary.map(entry => 
-            entry.id === editingProgress.id ? { ...entry, title: progressFormData.title, text: progressFormData.text } : entry
-          );
-          return { ...g, diary: updatedDiary };
-        } else {
-          // Add new progress
-          const newEntry = {
-            id: Date.now(),
-            date: getTodayDateString(),
-            title: progressFormData.title.trim(),
-            text: progressFormData.text.trim()
-          };
-          return { ...g, diary: [newEntry, ...g.diary] };
-        }
+    try {
+      const g = goals.find(goal => goal._id === activeGoalId);
+      if (!g) return;
+      
+      let updatedDiary;
+      if (editingProgress) {
+        updatedDiary = g.diary.map(entry => 
+          entry._id === editingProgress._id ? { ...entry, title: progressFormData.title.trim(), text: progressFormData.text.trim() } : entry
+        );
+      } else {
+        const newEntry = {
+          date: getTodayDateString(),
+          title: progressFormData.title.trim(),
+          text: progressFormData.text.trim()
+        };
+        updatedDiary = [newEntry, ...g.diary];
       }
-      return g;
-    }));
 
-    handleCloseProgressModal();
+      const res = await client.put(`/goals/${activeGoalId}`, { diary: updatedDiary });
+      setGoals(goals.map(goal => goal._id === activeGoalId ? res.data : goal));
+      handleCloseProgressModal();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save progress entry.');
+    }
   };
 
-  const handleDeleteProgress = (goalId, progressId) => {
-    setGoals(goals.map(g => {
-      if (g.id === goalId) {
-        return { ...g, diary: g.diary.filter(entry => entry.id !== progressId) };
-      }
-      return g;
-    }));
+  const handleDeleteProgress = async (goalId, progressId) => {
+    try {
+      const g = goals.find(goal => goal._id === goalId);
+      if (!g) return;
+      const updatedDiary = g.diary.filter(entry => entry._id !== progressId);
+      const res = await client.put(`/goals/${goalId}`, { diary: updatedDiary });
+      setGoals(goals.map(goal => goal._id === goalId ? res.data : goal));
+    } catch (err) {
+      console.error(err);
+      alert('Failed to delete progress entry.');
+    }
   };
 
   const getStatusColor = (status) => {
@@ -159,7 +161,7 @@ export default function Goals() {
 
       <Accordion>
         {goals.map(goal => (
-          <Accordion.Item eventKey={goal.id.toString()} key={goal.id} className="glass mb-3" style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+          <Accordion.Item eventKey={goal._id} key={goal._id} className="glass mb-3" style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
             <Accordion.Header>
               <div className="flex items-center justify-between w-100" style={{ paddingRight: '1.5rem' }}>
                 <div className="flex items-center gap-3">
@@ -181,7 +183,7 @@ export default function Goals() {
                   <label style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-muted)' }}>Update Status:</label>
                   <select 
                     value={goal.status} 
-                    onChange={(e) => handleStatusChange(goal.id, e.target.value)}
+                    onChange={(e) => handleStatusChange(goal._id, e.target.value)}
                     className="form-select"
                     style={{ width: 'auto', background: 'var(--background)', color: 'var(--text-main)', border: '1px solid var(--border)' }}
                   >
@@ -194,7 +196,7 @@ export default function Goals() {
                   <button className="btn btn-outline" style={{ padding: '0.25rem 0.75rem', fontSize: '0.875rem' }} onClick={() => handleShow(goal)}>
                     <Edit2 size={14} className="mr-1" /> Edit
                   </button>
-                  <button className="btn btn-outline" style={{ padding: '0.25rem 0.75rem', fontSize: '0.875rem', color: 'var(--danger)' }} onClick={() => handleDelete(goal.id)}>
+                  <button className="btn btn-outline" style={{ padding: '0.25rem 0.75rem', fontSize: '0.875rem', color: 'var(--danger)' }} onClick={() => handleDelete(goal._id)}>
                     <Trash2 size={14} className="mr-1" /> Delete
                   </button>
                 </div>
@@ -206,7 +208,7 @@ export default function Goals() {
                   <h3 className="flex items-center gap-2 m-0" style={{ fontSize: '1.125rem', fontWeight: 600 }}>
                     <BookOpen size={18} color="var(--primary)" /> Progress Diary
                   </h3>
-                  <button className="btn btn-primary" style={{ padding: '0.25rem 0.75rem', fontSize: '0.875rem' }} onClick={() => handleShowProgressModal(goal.id)}>
+                  <button className="btn btn-primary" style={{ padding: '0.25rem 0.75rem', fontSize: '0.875rem' }} onClick={() => handleShowProgressModal(goal._id)}>
                     <Plus size={16} className="mr-1" /> Add Progress
                   </button>
                 </div>
@@ -219,7 +221,7 @@ export default function Goals() {
                     </div>
                   ) : (
                     goal.diary.map(entry => (
-                      <div key={entry.id} className="glass" style={{ padding: '1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--background)', width: '100%' }}>
+                      <div key={entry._id} className="glass" style={{ padding: '1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--background)', width: '100%' }}>
                         <div className="flex items-center justify-between mb-2">
                           <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-main)' }}>{entry.title}</h4>
                           <div className="flex items-center gap-3">
@@ -227,10 +229,10 @@ export default function Goals() {
                               {entry.date}
                             </span>
                             <div className="flex items-center gap-1">
-                              <button className="btn btn-outline" style={{ padding: '0.25rem', border: 'none', borderRadius: '50%' }} onClick={() => handleShowProgressModal(goal.id, entry)}>
+                              <button className="btn btn-outline" style={{ padding: '0.25rem', border: 'none', borderRadius: '50%' }} onClick={() => handleShowProgressModal(goal._id, entry)}>
                                 <Edit2 size={14} />
                               </button>
-                              <button className="btn btn-outline" style={{ padding: '0.25rem', border: 'none', borderRadius: '50%', color: 'var(--danger)' }} onClick={() => handleDeleteProgress(goal.id, entry.id)}>
+                              <button className="btn btn-outline" style={{ padding: '0.25rem', border: 'none', borderRadius: '50%', color: 'var(--danger)' }} onClick={() => handleDeleteProgress(goal._id, entry._id)}>
                                 <Trash2 size={14} />
                               </button>
                             </div>

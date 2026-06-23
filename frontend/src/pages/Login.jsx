@@ -1,16 +1,24 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Activity } from 'lucide-react';
+import client from '../api/client';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // Simulate login
-    navigate('/');
+    setError('');
+    try {
+      const res = await client.post('/users/login', { email, password });
+      localStorage.setItem('userInfo', JSON.stringify(res.data));
+      navigate('/');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+    }
   };
 
   return (
@@ -26,6 +34,8 @@ export default function Login() {
           <p style={{ margin: 0, fontSize: '0.875rem', marginBottom: '1.5rem' }}>Welcome back! Please login to your account.</p>
         </div>
         
+        {error && <div style={{ color: 'var(--danger)', backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '0.75rem', borderRadius: 'var(--radius-md)', marginBottom: '1rem', textAlign: 'center', fontSize: '0.875rem' }}>{error}</div>}
+
         <form onSubmit={handleLogin}>
           <div className="input-group">
             <label>Email Address</label>
