@@ -163,9 +163,10 @@ export default function Planner() {
           const tasks = tasksByDate[dateKey] || [];
           const isPast = dateKey < todayDateString;
           const isToday = dateKey === todayDateString;
+          const isFuture = dateKey > todayDateString;
 
           return (
-            <Accordion.Item eventKey={dateKey} key={dateKey} className="glass mb-3" style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+            <Accordion.Item eventKey={dateKey} key={dateKey} className="glass mb-3" style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', overflow: 'hidden', opacity: isFuture ? 0.7 : 1 }}>
               <Accordion.Header>
                 <div className="flex items-center justify-between w-100" style={{ paddingRight: '1.5rem' }}>
                   <span style={{ fontWeight: 600, fontSize: '1.125rem' }}>
@@ -181,8 +182,8 @@ export default function Planner() {
                 
                 {tasks.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '2rem 0', color: 'var(--text-muted)' }}>
-                    <p>{isPast ? 'No plans were made for this day.' : 'Your day is clear! Add some tasks.'}</p>
-                    {!isPast && (
+                    <p>{isToday ? 'Your day is clear! Add some tasks.' : isPast ? 'No plans were made for this day.' : 'Future planning is locked.'}</p>
+                    {isToday && (
                       <button className="btn btn-primary mt-4" onClick={() => handleShow(dateKey)}>
                         <Plus size={18} /> Add Task
                       </button>
@@ -190,7 +191,7 @@ export default function Planner() {
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                    {!isPast && (
+                    {isToday && (
                       <div className="flex justify-end mb-2">
                         <button className="btn btn-outline" style={{ fontSize: '0.875rem', padding: '0.25rem 0.75rem' }} onClick={() => handleShow(dateKey)}>
                           <Plus size={16} /> Add Task
