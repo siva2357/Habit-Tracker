@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Check, X, Edit2, Trash2, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Check, X, Edit2, Trash2, Calendar as CalendarIcon, Download } from 'lucide-react';
 import { Modal, Form, Button } from 'react-bootstrap';
 
 // Helper to get days in a specific month
@@ -107,32 +107,33 @@ export default function Habits() {
         <button className="btn btn-primary" onClick={() => handleShow()}><Plus size={18} /> Add Habit</button>
       </div>
 
-      <div className="card glass mb-6" style={{ marginBottom: '2rem' }}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <CalendarIcon size={24} color="var(--primary)" />
-            <select 
-              value={currentMonth} 
-              onChange={(e) => setCurrentMonth(Number(e.target.value))}
-              className="input-field"
-              style={{ minWidth: '150px', padding: '0.5rem 1rem', fontSize: '1rem', fontWeight: 600 }}
-            >
-              {months.map((m, idx) => (
-                <option key={m} value={idx}>{m}</option>
-              ))}
-            </select>
-            <select 
-              value={currentYear} 
-              onChange={(e) => setCurrentYear(Number(e.target.value))}
-              className="input-field"
-              style={{ padding: '0.5rem 1rem', fontSize: '1rem', fontWeight: 600 }}
-            >
-              {[2025, 2026, 2027].map(y => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </select>
-          </div>
+      <div className="flex items-center justify-between p-3 glass" style={{ marginBottom: '2.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', flexWrap: 'wrap', gap: '1rem' }}>
+        <div className="flex items-center gap-3 flex-wrap">
+          <CalendarIcon size={20} color="var(--primary)" />
+          <select 
+            value={currentMonth} 
+            onChange={(e) => setCurrentMonth(Number(e.target.value))}
+            className="form-select input-field"
+            style={{ width: 'auto', backgroundColor: 'var(--background)' }}
+          >
+            {months.map((m, idx) => (
+              <option key={m} value={idx}>{m}</option>
+            ))}
+          </select>
+          <select 
+            value={currentYear} 
+            onChange={(e) => setCurrentYear(Number(e.target.value))}
+            className="form-select input-field"
+            style={{ width: 'auto', backgroundColor: 'var(--background)' }}
+          >
+            {[2024, 2025, 2026, 2027].map(y => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
         </div>
+        <button className="btn btn-primary flex items-center gap-2" style={{ padding: '0.5rem 1rem' }} onClick={() => alert('Downloading report...')}>
+          <Download size={16} /> Download Report
+        </button>
       </div>
 
       <div style={{ display: 'grid', gap: '1.5rem' }}>

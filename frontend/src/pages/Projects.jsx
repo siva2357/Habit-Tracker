@@ -1,22 +1,22 @@
 import { useState } from 'react';
-import { Plus, Target, Edit2, Trash2, BookOpen, Send, CheckCircle } from 'lucide-react';
+import { Plus, Briefcase, Edit2, Trash2, BookOpen } from 'lucide-react';
 import { Modal, Form, Button, Accordion } from 'react-bootstrap';
 
-const initialGoals = [
+const initialProjects = [
   { 
     id: 1, 
-    title: 'Learn React', 
+    title: 'Build Portfolio Website', 
     status: 'In Progress', 
-    diary: [
-      { id: 1, date: '2026-06-20', title: 'Started Basics', text: 'Started reading the official documentation and built a counter app.' },
-      { id: 2, date: '2026-06-21', title: 'React Hooks', text: 'Learned about hooks, specifically useState and useEffect.' }
+    updates: [
+      { id: 1, date: '2026-06-20', title: 'Started Design', text: 'Created the wireframes for the homepage and about section.' },
+      { id: 2, date: '2026-06-21', title: 'Setup Repository', text: 'Initialized Vite React project and configured styling.' }
     ] 
   },
   { 
     id: 2, 
-    title: 'Run a Marathon', 
+    title: 'Learn Advanced TypeScript', 
     status: 'Pending', 
-    diary: [] 
+    updates: [] 
   },
 ];
 
@@ -25,60 +25,60 @@ const getTodayDateString = () => {
   return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 };
 
-export default function Goals() {
-  const [goals, setGoals] = useState(initialGoals);
+export default function Projects() {
+  const [projects, setProjects] = useState(initialProjects);
   
-  // Goal Modal State
+  // Project Modal State
   const [showModal, setShowModal] = useState(false);
-  const [editingGoal, setEditingGoal] = useState(null);
+  const [editingProject, setEditingProject] = useState(null);
   const [formData, setFormData] = useState({ title: '', status: 'Pending' });
 
   // Progress Modal State
   const [showProgressModal, setShowProgressModal] = useState(false);
-  const [activeGoalId, setActiveGoalId] = useState(null);
+  const [activeProjectId, setActiveProjectId] = useState(null);
   const [editingProgress, setEditingProgress] = useState(null);
   const [progressFormData, setProgressFormData] = useState({ title: '', text: '' });
 
-  // Goal Modal Handlers
+  // Project Modal Handlers
   const handleClose = () => {
     setShowModal(false);
-    setEditingGoal(null);
+    setEditingProject(null);
     setFormData({ title: '', status: 'Pending' });
   };
 
-  const handleShow = (goal = null) => {
-    if (goal) {
-      setEditingGoal(goal);
-      setFormData({ title: goal.title, status: goal.status });
+  const handleShow = (project = null) => {
+    if (project) {
+      setEditingProject(project);
+      setFormData({ title: project.title, status: project.status });
     }
     setShowModal(true);
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (editingGoal) {
-      setGoals(goals.map(g => 
-        g.id === editingGoal.id ? { ...g, title: formData.title, status: formData.status } : g
+    if (editingProject) {
+      setProjects(projects.map(p => 
+        p.id === editingProject.id ? { ...p, title: formData.title, status: formData.status } : p
       ));
     } else {
-      const newGoal = {
+      const newProject = {
         id: Date.now(),
         title: formData.title,
         status: formData.status,
-        diary: []
+        updates: []
       };
-      setGoals([...goals, newGoal]);
+      setProjects([...projects, newProject]);
     }
     handleClose();
   };
 
   const handleDelete = (id) => {
-    setGoals(goals.filter(g => g.id !== id));
+    setProjects(projects.filter(p => p.id !== id));
   };
 
-  const handleStatusChange = (goalId, newStatus) => {
-    setGoals(goals.map(g => 
-      g.id === goalId ? { ...g, status: newStatus } : g
+  const handleStatusChange = (projectId, newStatus) => {
+    setProjects(projects.map(p => 
+      p.id === projectId ? { ...p, status: newStatus } : p
     ));
   };
 
@@ -87,11 +87,11 @@ export default function Goals() {
     setShowProgressModal(false);
     setEditingProgress(null);
     setProgressFormData({ title: '', text: '' });
-    setActiveGoalId(null);
+    setActiveProjectId(null);
   };
 
-  const handleShowProgressModal = (goalId, progress = null) => {
-    setActiveGoalId(goalId);
+  const handleShowProgressModal = (projectId, progress = null) => {
+    setActiveProjectId(projectId);
     if (progress) {
       setEditingProgress(progress);
       setProgressFormData({ title: progress.title, text: progress.text });
@@ -103,14 +103,14 @@ export default function Goals() {
     e.preventDefault();
     if (!progressFormData.title.trim() || !progressFormData.text.trim()) return;
 
-    setGoals(goals.map(g => {
-      if (g.id === activeGoalId) {
+    setProjects(projects.map(p => {
+      if (p.id === activeProjectId) {
         if (editingProgress) {
           // Update existing progress
-          const updatedDiary = g.diary.map(entry => 
+          const updatedUpdates = p.updates.map(entry => 
             entry.id === editingProgress.id ? { ...entry, title: progressFormData.title, text: progressFormData.text } : entry
           );
-          return { ...g, diary: updatedDiary };
+          return { ...p, updates: updatedUpdates };
         } else {
           // Add new progress
           const newEntry = {
@@ -119,21 +119,21 @@ export default function Goals() {
             title: progressFormData.title.trim(),
             text: progressFormData.text.trim()
           };
-          return { ...g, diary: [newEntry, ...g.diary] };
+          return { ...p, updates: [newEntry, ...p.updates] };
         }
       }
-      return g;
+      return p;
     }));
 
     handleCloseProgressModal();
   };
 
-  const handleDeleteProgress = (goalId, progressId) => {
-    setGoals(goals.map(g => {
-      if (g.id === goalId) {
-        return { ...g, diary: g.diary.filter(entry => entry.id !== progressId) };
+  const handleDeleteProgress = (projectId, progressId) => {
+    setProjects(projects.map(p => {
+      if (p.id === projectId) {
+        return { ...p, updates: p.updates.filter(entry => entry.id !== progressId) };
       }
-      return g;
+      return p;
     }));
   };
 
@@ -149,26 +149,26 @@ export default function Goals() {
     <div className="animate-fade-in pb-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1>Long-Term Goals</h1>
-          <p>Track your major milestones with a daily progress diary.</p>
+          <h1>Active Projects</h1>
+          <p>Track your ongoing projects with a progress diary.</p>
         </div>
         <button className="btn btn-primary" onClick={() => handleShow()}>
-          <Plus size={18} /> Add Goal
+          <Plus size={18} /> Add Project
         </button>
       </div>
 
       <Accordion>
-        {goals.map(goal => (
-          <Accordion.Item eventKey={goal.id.toString()} key={goal.id} className="glass mb-3" style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+        {projects.map(project => (
+          <Accordion.Item eventKey={project.id.toString()} key={project.id} className="glass mb-3" style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
             <Accordion.Header>
               <div className="flex items-center justify-between w-100" style={{ paddingRight: '1.5rem' }}>
                 <div className="flex items-center gap-3">
-                  <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: getStatusColor(goal.status) }} />
-                  <span style={{ fontWeight: 600, fontSize: '1.125rem' }}>{goal.title}</span>
+                  <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: getStatusColor(project.status) }} />
+                  <span style={{ fontWeight: 600, fontSize: '1.125rem' }}>{project.title}</span>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span style={{ fontSize: '0.875rem', fontWeight: 500, color: getStatusColor(goal.status), background: 'var(--surface)', padding: '0.25rem 0.75rem', borderRadius: '1rem', border: '1px solid var(--border)' }}>
-                    {goal.status}
+                  <span style={{ fontSize: '0.875rem', fontWeight: 500, color: getStatusColor(project.status), background: 'var(--surface)', padding: '0.25rem 0.75rem', borderRadius: '1rem', border: '1px solid var(--border)' }}>
+                    {project.status}
                   </span>
                 </div>
               </div>
@@ -180,8 +180,8 @@ export default function Goals() {
                 <div className="flex items-center gap-3 flex-wrap">
                   <label style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-muted)' }}>Update Status:</label>
                   <select 
-                    value={goal.status} 
-                    onChange={(e) => handleStatusChange(goal.id, e.target.value)}
+                    value={project.status} 
+                    onChange={(e) => handleStatusChange(project.id, e.target.value)}
                     className="form-select"
                     style={{ width: 'auto', background: 'var(--background)', color: 'var(--text-main)', border: '1px solid var(--border)' }}
                   >
@@ -191,34 +191,34 @@ export default function Goals() {
                   </select>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button className="btn btn-outline" style={{ padding: '0.25rem 0.75rem', fontSize: '0.875rem' }} onClick={() => handleShow(goal)}>
+                  <button className="btn btn-outline" style={{ padding: '0.25rem 0.75rem', fontSize: '0.875rem' }} onClick={() => handleShow(project)}>
                     <Edit2 size={14} className="mr-1" /> Edit
                   </button>
-                  <button className="btn btn-outline" style={{ padding: '0.25rem 0.75rem', fontSize: '0.875rem', color: 'var(--danger)' }} onClick={() => handleDelete(goal.id)}>
+                  <button className="btn btn-outline" style={{ padding: '0.25rem 0.75rem', fontSize: '0.875rem', color: 'var(--danger)' }} onClick={() => handleDelete(project.id)}>
                     <Trash2 size={14} className="mr-1" /> Delete
                   </button>
                 </div>
               </div>
 
-              {/* Diary Section */}
+              {/* Updates Section */}
               <div className="diary-section">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="flex items-center gap-2 m-0" style={{ fontSize: '1.125rem', fontWeight: 600 }}>
-                    <BookOpen size={18} color="var(--primary)" /> Progress Diary
+                    <Briefcase size={18} color="var(--primary)" /> Progress Updates
                   </h3>
-                  <button className="btn btn-primary" style={{ padding: '0.25rem 0.75rem', fontSize: '0.875rem' }} onClick={() => handleShowProgressModal(goal.id)}>
+                  <button className="btn btn-primary" style={{ padding: '0.25rem 0.75rem', fontSize: '0.875rem' }} onClick={() => handleShowProgressModal(project.id)}>
                     <Plus size={16} className="mr-1" /> Add Progress
                   </button>
                 </div>
 
-                {/* Diary History */}
+                {/* Updates History */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
-                  {goal.diary.length === 0 ? (
+                  {project.updates.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '2rem 0', color: 'var(--text-muted)' }}>
                       No entries yet. Start logging your journey!
                     </div>
                   ) : (
-                    goal.diary.map(entry => (
+                    project.updates.map(entry => (
                       <div key={entry.id} className="glass" style={{ padding: '1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--background)', width: '100%' }}>
                         <div className="flex items-center justify-between mb-2">
                           <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-main)' }}>{entry.title}</h4>
@@ -227,10 +227,10 @@ export default function Goals() {
                               {entry.date}
                             </span>
                             <div className="flex items-center gap-1">
-                              <button className="btn btn-outline" style={{ padding: '0.25rem', border: 'none', borderRadius: '50%' }} onClick={() => handleShowProgressModal(goal.id, entry)}>
+                              <button className="btn btn-outline" style={{ padding: '0.25rem', border: 'none', borderRadius: '50%' }} onClick={() => handleShowProgressModal(project.id, entry)}>
                                 <Edit2 size={14} />
                               </button>
-                              <button className="btn btn-outline" style={{ padding: '0.25rem', border: 'none', borderRadius: '50%', color: 'var(--danger)' }} onClick={() => handleDeleteProgress(goal.id, entry.id)}>
+                              <button className="btn btn-outline" style={{ padding: '0.25rem', border: 'none', borderRadius: '50%', color: 'var(--danger)' }} onClick={() => handleDeleteProgress(project.id, entry.id)}>
                                 <Trash2 size={14} />
                               </button>
                             </div>
@@ -253,15 +253,15 @@ export default function Goals() {
       {/* Add/Edit Modal */}
       <Modal show={showModal} onHide={handleClose} centered contentClassName="glass">
         <Modal.Header closeButton style={{ borderBottom: '1px solid var(--border)' }}>
-          <Modal.Title style={{ fontWeight: 700 }}>{editingGoal ? 'Edit Goal' : 'Add New Goal'}</Modal.Title>
+          <Modal.Title style={{ fontWeight: 700 }}>{editingProject ? 'Edit Project' : 'Add New Project'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3">
-              <Form.Label>Goal Title</Form.Label>
+              <Form.Label>Project Title</Form.Label>
               <Form.Control 
                 type="text" 
-                placeholder="e.g., Run a Marathon" 
+                placeholder="e.g., Build Portfolio Website" 
                 value={formData.title}
                 onChange={(e) => setFormData({...formData, title: e.target.value})}
                 required
@@ -285,7 +285,7 @@ export default function Goals() {
                 Cancel
               </Button>
               <Button variant="primary" type="submit" className="btn btn-primary flex-grow-1" style={{ width: '100%' }}>
-                {editingGoal ? 'Save Changes' : 'Add Goal'}
+                {editingProject ? 'Save Changes' : 'Add Project'}
               </Button>
             </div>
           </Form>

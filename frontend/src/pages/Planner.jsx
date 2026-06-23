@@ -115,35 +115,33 @@ export default function Planner() {
         </div>
       </div>
 
-      <div className="card glass mb-6" style={{ marginBottom: '2rem' }}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <CalendarIcon size={24} color="var(--primary)" />
-            <select 
-              value={currentMonth} 
-              onChange={(e) => setCurrentMonth(Number(e.target.value))}
-              className="form-select"
-              style={{ minWidth: '150px', background: 'var(--surface)', color: 'var(--text-main)', border: '1px solid var(--border)', fontWeight: 500 }}
-            >
-              {months.map((m, idx) => (
-                <option key={m} value={idx}>{m}</option>
-              ))}
-            </select>
-            <select 
-              value={currentYear} 
-              onChange={(e) => setCurrentYear(Number(e.target.value))}
-              className="form-select"
-              style={{ width: 'auto', background: 'var(--surface)', color: 'var(--text-main)', border: '1px solid var(--border)', fontWeight: 500 }}
-            >
-              {[2025, 2026, 2027].map(y => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </select>
-          </div>
-          <button className="btn btn-primary" onClick={() => alert('Download functionality will be integrated with backend.')}>
-            <Download size={18} /> Download Report
-          </button>
+      <div className="flex justify-between items-center glass p-3" style={{ borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' }}>
+        <div className="flex items-center gap-4 flex-wrap">
+          <CalendarIcon size={24} color="var(--primary)" />
+          <select 
+            value={currentMonth} 
+            onChange={(e) => setCurrentMonth(Number(e.target.value))}
+            className="form-select"
+            style={{ width: 'auto', minWidth: '150px', backgroundColor: 'var(--surface)', color: 'var(--text-main)', border: '1px solid var(--border)', fontWeight: 500 }}
+          >
+            {months.map((m, idx) => (
+              <option key={m} value={idx}>{m}</option>
+            ))}
+          </select>
+          <select 
+            value={currentYear} 
+            onChange={(e) => setCurrentYear(Number(e.target.value))}
+            className="form-select"
+            style={{ width: 'auto', backgroundColor: 'var(--surface)', color: 'var(--text-main)', border: '1px solid var(--border)', fontWeight: 500 }}
+          >
+            {[2025, 2026, 2027].map(y => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
         </div>
+        <button className="btn btn-primary flex items-center gap-2" style={{ padding: '0.5rem 1rem' }} onClick={() => alert('Downloading report...')}>
+          <Download size={16} /> Download Report
+        </button>
       </div>
 
       <Accordion defaultActiveKey={todayDateString}>

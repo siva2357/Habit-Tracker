@@ -1,31 +1,34 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, NavLink, useLocation } from 'react-router-dom';
-import { Home, CheckSquare, Calendar, Target, Menu, X } from 'lucide-react';
+import { BrowserRouter as Router, Routes, Route, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Home, CheckSquare, Calendar, Target, Briefcase, Menu, X, Wallet, User, LogOut, Activity } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Habits from './pages/Habits';
 import Planner from './pages/Planner';
 import Goals from './pages/Goals';
+import Projects from './pages/Projects';
+import Fitness from './pages/Fitness';
+import Finance from './pages/Finance';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Profile from './pages/Profile';
 import './index.css';
 
 function Sidebar({ isOpen, setIsOpen, isMobile }) {
-  // Close sidebar on mobile when navigating
-  const location = useLocation();
-  useEffect(() => {
-    if (isMobile) setIsOpen(false);
-  }, [location, isMobile, setIsOpen]);
+  const navigate = useNavigate();
+  if (isMobile) return null;
 
   return (
     <>
-      {isMobile && isOpen && (
-        <div className="sidebar-overlay" onClick={() => setIsOpen(false)} />
-      )}
-      <aside className={`sidebar ${isOpen ? 'open' : 'collapsed'}`}>
+      <aside className={`sidebar ${isOpen ? 'open' : 'collapsed'}`} style={{ display: 'flex', flexDirection: 'column' }}>
         <div className="flex items-center justify-between mb-6" style={{ padding: '0 0.5rem' }}>
           <div className="flex items-center gap-3">
             <button className="btn btn-outline" style={{ padding: '0.25rem', border: 'none' }} onClick={() => setIsOpen(!isOpen)}>
               <Menu size={24} color="var(--primary)" />
             </button>
-            <h2 className="brand-text" style={{ marginBottom: 0, fontSize: '1.25rem' }}>TrackIt</h2>
+            <div className="flex items-center gap-2 brand-text">
+              <Activity size={24} color="var(--primary)" />
+              <h2 style={{ marginBottom: 0, fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.5px' }}>TrackIt</h2>
+            </div>
           </div>
           {isMobile && (
             <button className="btn btn-outline" style={{ padding: '0.25rem', border: 'none' }} onClick={() => setIsOpen(false)}>
@@ -34,7 +37,7 @@ function Sidebar({ isOpen, setIsOpen, isMobile }) {
           )}
         </div>
         
-        <nav className="flex flex-col gap-2" style={{ flexDirection: 'column' }}>
+        <nav className="flex flex-col gap-2" style={{ flexDirection: 'column', flex: 1 }}>
           <NavLink to="/" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
             <Home size={20} style={{ minWidth: '20px' }} />
             <span className="nav-text">Dashboard</span>
@@ -55,9 +58,91 @@ function Sidebar({ isOpen, setIsOpen, isMobile }) {
             <span className="nav-text">Goals</span>
             <span className="tooltip-text">Goals</span>
           </NavLink>
+          <NavLink to="/projects" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
+            <Briefcase size={20} style={{ minWidth: '20px' }} />
+            <span className="nav-text">Projects</span>
+            <span className="tooltip-text">Projects</span>
+          </NavLink>
+          <NavLink to="/fitness" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
+            <Activity size={20} style={{ minWidth: '20px' }} />
+            <span className="nav-text">Fitness</span>
+            <span className="tooltip-text">Fitness</span>
+          </NavLink>
+          <NavLink to="/finance" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
+            <Wallet size={20} style={{ minWidth: '20px' }} />
+            <span className="nav-text">Finance</span>
+            <span className="tooltip-text">Finance</span>
+          </NavLink>
         </nav>
+
+        <div className="sidebar-footer" style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem', marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <NavLink to="/profile" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
+            <User size={20} style={{ minWidth: '20px' }} />
+            <span className="nav-text">Profile</span>
+            <span className="tooltip-text">Profile</span>
+          </NavLink>
+          <button className="nav-link" style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', color: 'var(--danger)' }} onClick={() => navigate('/login')}>
+            <LogOut size={20} style={{ minWidth: '20px' }} />
+            <span className="nav-text">Logout</span>
+            <span className="tooltip-text" style={{ background: 'var(--danger)' }}>Logout</span>
+          </button>
+        </div>
       </aside>
     </>
+  );
+}
+
+function BottomNav() {
+  return (
+    <nav className="bottom-nav" style={{ padding: '0 0.25rem' }}>
+      <NavLink to="/" className={({isActive}) => isActive ? "bottom-nav-link active" : "bottom-nav-link"} style={{ padding: '0.5rem 0.25rem' }}>
+        <Home size={22} />
+      </NavLink>
+      <NavLink to="/habits" className={({isActive}) => isActive ? "bottom-nav-link active" : "bottom-nav-link"} style={{ padding: '0.5rem 0.25rem' }}>
+        <CheckSquare size={22} />
+      </NavLink>
+      <NavLink to="/planner" className={({isActive}) => isActive ? "bottom-nav-link active" : "bottom-nav-link"} style={{ padding: '0.5rem 0.25rem' }}>
+        <Calendar size={22} />
+      </NavLink>
+      <NavLink to="/projects" className={({isActive}) => isActive ? "bottom-nav-link active" : "bottom-nav-link"} style={{ padding: '0.5rem 0.25rem' }}>
+        <Briefcase size={22} />
+      </NavLink>
+      <NavLink to="/fitness" className={({isActive}) => isActive ? "bottom-nav-link active" : "bottom-nav-link"} style={{ padding: '0.5rem 0.25rem' }}>
+        <Activity size={22} />
+      </NavLink>
+      <NavLink to="/finance" className={({isActive}) => isActive ? "bottom-nav-link active" : "bottom-nav-link"} style={{ padding: '0.5rem 0.25rem' }}>
+        <Wallet size={22} />
+      </NavLink>
+      <NavLink to="/profile" className={({isActive}) => isActive ? "bottom-nav-link active" : "bottom-nav-link"} style={{ padding: '0.5rem 0.25rem' }}>
+        <User size={22} />
+      </NavLink>
+    </nav>
+  );
+}
+
+function AppContent({ isOpen, setIsOpen, isMobile }) {
+  const location = useLocation();
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+
+  return (
+    <div className="page-layout">
+      {!isAuthPage && <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} isMobile={isMobile} />}
+      <main className={`main-content ${!isOpen && !isMobile && !isAuthPage ? 'expanded' : ''}`} style={isAuthPage ? { marginLeft: 0, padding: 0 } : {}}>
+        {isMobile && !isAuthPage && <BottomNav />}
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/habits" element={<Habits />} />
+          <Route path="/planner" element={<Planner />} />
+          <Route path="/goals" element={<Goals />} />
+          <Route path="/projects" element={<Projects />} />
+          <Route path="/fitness" element={<Fitness />} />
+          <Route path="/finance" element={<Finance />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/profile" element={<Profile />} />
+        </Routes>
+      </main>
+    </div>
   );
 }
 
@@ -78,24 +163,7 @@ function App() {
 
   return (
     <Router>
-      <div className="page-layout">
-        <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} isMobile={isMobile} />
-        <main className={`main-content ${!isOpen && !isMobile ? 'expanded' : ''}`}>
-          {isMobile && (
-            <div className="mb-4">
-              <button className="btn btn-outline" style={{ padding: '0.5rem', border: '1px solid var(--border)', background: 'var(--surface)' }} onClick={() => setIsOpen(true)}>
-                <Menu size={20} />
-              </button>
-            </div>
-          )}
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/habits" element={<Habits />} />
-            <Route path="/planner" element={<Planner />} />
-            <Route path="/goals" element={<Goals />} />
-          </Routes>
-        </main>
-      </div>
+      <AppContent isOpen={isOpen} setIsOpen={setIsOpen} isMobile={isMobile} />
     </Router>
   );
 }
