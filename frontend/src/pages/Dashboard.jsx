@@ -24,9 +24,11 @@ const renderCustomTooltip = ({ active, payload }) => {
 const EmptyPieData = [{ name: 'No Data', value: 1, color: '#e2e8f0' }];
 
 export default function Dashboard() {
-  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
-  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
-  
+  const [currentYear, setCurrentYear] = useState(() => Math.max(2026, new Date().getFullYear()));
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const d = new Date();
+    return (Math.max(2026, d.getFullYear()) === 2026 && d.getMonth() < 6) ? 6 : d.getMonth();
+  });
   const [habits, setHabits] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [goals, setGoals] = useState([]);
@@ -201,7 +203,7 @@ export default function Dashboard() {
             style={{ width: 'auto', backgroundColor: 'var(--background)', padding: '0.4rem 2rem 0.4rem 1rem' }}
           >
             {months.map((m, idx) => (
-              <option key={m} value={idx}>{m}</option>
+              (currentYear === 2026 && idx < 6) ? null : <option key={m} value={idx}>{m}</option>
             ))}
           </select>
           <select 
@@ -210,7 +212,7 @@ export default function Dashboard() {
             className="form-select input-field"
             style={{ width: 'auto', backgroundColor: 'var(--background)', padding: '0.4rem 2rem 0.4rem 1rem' }}
           >
-            {[2024, 2025, 2026, 2027].map(y => (
+            {[2026, 2027, 2028, 2029].map(y => (
               <option key={y} value={y}>{y}</option>
             ))}
           </select>

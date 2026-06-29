@@ -38,8 +38,11 @@ export default function Planner() {
   }, []);
   
   // Calendar State
-  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
-  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+  const [currentYear, setCurrentYear] = useState(() => Math.max(2026, new Date().getFullYear()));
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const d = new Date();
+    return (Math.max(2026, d.getFullYear()) === 2026 && d.getMonth() < 6) ? 6 : d.getMonth();
+  });
   const todayDateString = getTodayDateString();
 
   const daysInMonth = useMemo(() => getDaysInMonth(currentYear, currentMonth), [currentYear, currentMonth]);
@@ -138,7 +141,7 @@ export default function Planner() {
             style={{ width: 'auto', minWidth: '150px', backgroundColor: 'var(--surface)', color: 'var(--text-main)', border: '1px solid var(--border)', fontWeight: 500 }}
           >
             {months.map((m, idx) => (
-              <option key={m} value={idx}>{m}</option>
+              (currentYear === 2026 && idx < 6) ? null : <option key={m} value={idx}>{m}</option>
             ))}
           </select>
           <select 
@@ -147,7 +150,7 @@ export default function Planner() {
             className="form-select"
             style={{ width: 'auto', backgroundColor: 'var(--surface)', color: 'var(--text-main)', border: '1px solid var(--border)', fontWeight: 500 }}
           >
-            {[2025, 2026, 2027].map(y => (
+            {[2026, 2027, 2028, 2029].map(y => (
               <option key={y} value={y}>{y}</option>
             ))}
           </select>

@@ -21,8 +21,11 @@ const getTodayDateString = () => {
 };
 
 export default function Fitness() {
-  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
-  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [currentYear, setCurrentYear] = useState(() => Math.max(2026, new Date().getFullYear()));
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const d = new Date();
+    return (Math.max(2026, d.getFullYear()) === 2026 && d.getMonth() < 6) ? 6 : d.getMonth();
+  });
   const [exercises, setExercises] = useState([]);
 
   useEffect(() => {
@@ -116,9 +119,6 @@ export default function Fitness() {
           <h1>Fitness Tracker</h1>
           <p>Log your workouts and monitor your physical activity every day.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => handleShow()}>
-          <Plus size={18} /> Add Exercise
-        </button>
       </div>
 
       {/* Month/Year Selector and Actions */}
@@ -132,7 +132,7 @@ export default function Fitness() {
             style={{ width: 'auto', backgroundColor: 'var(--background)', padding: '0.4rem 2.25rem 0.4rem 1rem' }}
           >
             {months.map((m, idx) => (
-              <option key={m} value={idx}>{m}</option>
+              (currentYear === 2026 && idx < 6) ? null : <option key={m} value={idx}>{m}</option>
             ))}
           </select>
           <select 
@@ -141,7 +141,7 @@ export default function Fitness() {
             className="form-select input-field"
             style={{ width: 'auto', backgroundColor: 'var(--background)', padding: '0.4rem 2.25rem 0.4rem 1rem' }}
           >
-            {[2024, 2025, 2026, 2027].map(y => (
+            {[2026, 2027, 2028, 2029].map(y => (
               <option key={y} value={y}>{y}</option>
             ))}
           </select>

@@ -21,8 +21,11 @@ const getTodayDateString = () => {
 };
 
 export default function Finance() {
-  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
-  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [currentYear, setCurrentYear] = useState(() => Math.max(2026, new Date().getFullYear()));
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const d = new Date();
+    return (Math.max(2026, d.getFullYear()) === 2026 && d.getMonth() < 6) ? 6 : d.getMonth();
+  });
   const [transactions, setTransactions] = useState([]);
   const [budget, setBudget] = useState(null);
 
@@ -184,7 +187,7 @@ export default function Finance() {
             style={{ width: 'auto', backgroundColor: 'var(--background)', padding: '0.4rem 2rem 0.4rem 1rem' }}
           >
             {months.map((m, idx) => (
-              <option key={m} value={idx}>{m}</option>
+              (currentYear === 2026 && idx < 6) ? null : <option key={m} value={idx}>{m}</option>
             ))}
           </select>
           <select 
@@ -193,7 +196,7 @@ export default function Finance() {
             className="form-select input-field"
             style={{ width: 'auto', backgroundColor: 'var(--background)', padding: '0.4rem 2rem 0.4rem 1rem' }}
           >
-            {[2024, 2025, 2026, 2027].map(y => (
+            {[2026, 2027, 2028, 2029].map(y => (
               <option key={y} value={y}>{y}</option>
             ))}
           </select>

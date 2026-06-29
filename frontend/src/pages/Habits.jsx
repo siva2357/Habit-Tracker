@@ -35,8 +35,11 @@ export default function Habits() {
   const [formData, setFormData] = useState({ title: '' });
 
   // Calendar State
-  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
-  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+  const [currentYear, setCurrentYear] = useState(() => Math.max(2026, new Date().getFullYear()));
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const d = new Date();
+    return (Math.max(2026, d.getFullYear()) === 2026 && d.getMonth() < 6) ? 6 : d.getMonth();
+  });
 
   const daysInMonth = useMemo(() => getDaysInMonth(currentYear, currentMonth), [currentYear, currentMonth]);
   const daysArray = useMemo(() => Array.from({ length: daysInMonth }, (_, i) => i + 1), [daysInMonth]);
@@ -130,7 +133,7 @@ export default function Habits() {
             style={{ width: 'auto', backgroundColor: 'var(--background)' }}
           >
             {months.map((m, idx) => (
-              <option key={m} value={idx}>{m}</option>
+              (currentYear === 2026 && idx < 6) ? null : <option key={m} value={idx}>{m}</option>
             ))}
           </select>
           <select 
@@ -139,7 +142,7 @@ export default function Habits() {
             className="form-select input-field"
             style={{ width: 'auto', backgroundColor: 'var(--background)' }}
           >
-            {[2024, 2025, 2026, 2027].map(y => (
+            {[2026, 2027, 2028, 2029].map(y => (
               <option key={y} value={y}>{y}</option>
             ))}
           </select>
