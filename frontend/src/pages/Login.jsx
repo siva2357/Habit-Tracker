@@ -1,78 +1,122 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Activity } from 'lucide-react';
-import client from '../api/client';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import logo from '../assets/logo.png';
+import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
-export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+const Login = () => {
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  
   const navigate = useNavigate();
+  const { login } = useAuth();
 
-  const handleLogin = async (e) => {
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
+
     try {
-      const res = await client.post('/users/login', { email, password });
-      localStorage.setItem('userInfo', JSON.stringify(res.data));
-      navigate('/');
+      const { data } = await api.post('/login', formData);
+      login(data, data.token);
+      navigate('/home');
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+      setError(err.response?.data?.message || 'Invalid email or password.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', width: '100%', padding: '1rem' }}>
-      <div className="card glass animate-fade-in auth-card">
-        <div className="text-center mb-8">
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
-            <div style={{ padding: '1rem', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Activity size={32} color="var(--primary)" />
+    <div className="page-container" style={{
+      display: 'flex',
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 'calc(100vh - 4rem)'
+    }}>
+      <div className="glass-panel" style={{
+        padding: '3rem',
+        maxWidth: '400px',
+        width: '100%',
+        textAlign: 'center'
+      }}>
+        <img
+          src={logo}
+          alt="TrackIt Logo"
+          style={{
+            width: '64px',
+            height: '64px',
+            borderRadius: '16px',
+            margin: '0 auto 1rem',
+            display: 'block',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+          }}
+        />
+        <h2 style={{ fontSize: '2rem', margin: '0 0 0.5rem' }}>Welcome Back</h2>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
+          Please sign in to continue
+        </p>
+
+        {error && <div style={{ color: '#ff6b6b', marginBottom: '1rem', background: 'rgba(255, 107, 107, 0.1)', padding: '10px', borderRadius: '8px' }}>{error}</div>}
+
+        <form onSubmit={handleSubmit}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
+            <input
+              type="email"
+              name="email"
+              placeholder="Email address"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              style={{
+                padding: '12px 16px',
+                borderRadius: '12px',
+                border: '1px solid var(--glass-border)',
+                background: 'rgba(0,0,0,0.05)',
+                color: 'var(--text-primary)',
+                fontSize: '1rem',
+                outline: 'none'
+              }}
+            />
+            <input
+              type="password"
+              name="password"
+              placeholder="Password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              style={{
+                padding: '12px 16px',
+                borderRadius: '12px',
+                border: '1px solid var(--glass-border)',
+                background: 'rgba(0,0,0,0.05)',
+                color: 'var(--text-primary)',
+                fontSize: '1rem',
+                outline: 'none'
+              }}
+            />
+            <div style={{ textAlign: 'right', marginTop: '-0.5rem' }}>
+              <Link to="/forgot-password" style={{ color: 'var(--accent-color)', fontSize: '0.85rem' }}>Forgot Password?</Link>
             </div>
           </div>
-          <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem', fontWeight: 800, letterSpacing: '-0.5px' }}>TrackIt</h1>
-          <p style={{ margin: 0, fontSize: '0.875rem', marginBottom: '1.5rem' }}>Welcome back! Please login to your account.</p>
-        </div>
-        
-        {error && <div style={{ color: 'var(--danger)', backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '0.75rem', borderRadius: 'var(--radius-md)', marginBottom: '1rem', textAlign: 'center', fontSize: '0.875rem' }}>{error}</div>}
 
-        <form onSubmit={handleLogin}>
-          <div className="input-group">
-            <label>Email Address</label>
-            <input 
-              type="email" 
-              className="input-field" 
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-          
-          <div className="input-group mb-6">
-            <div className="flex justify-between items-center w-100">
-              <label>Password</label>
-              <a href="#" style={{ fontSize: '0.875rem', color: 'var(--primary)', textDecoration: 'none' }}>Forgot Password?</a>
-            </div>
-            <input 
-              type="password" 
-              className="input-field" 
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-
-          <button type="submit" className="btn btn-primary w-100" style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', marginTop: '0.5rem' }}>
-            Login
+          <button type="submit" className="btn-primary" style={{ width: '100%' }} disabled={loading}>
+            {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
 
-        <p className="text-center mt-8" style={{ fontSize: '0.875rem' }}>
-          Don't have an account? <Link to="/register" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>Register here</Link>
+        <p style={{ marginTop: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+          Don't have an account? <Link to="/signup" style={{ color: 'var(--accent-color)' }}>Sign up</Link>
         </p>
       </div>
     </div>
   );
-}
+};
+
+export default Login;

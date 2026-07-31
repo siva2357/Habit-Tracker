@@ -1,156 +1,52 @@
-import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Home, CheckSquare, Calendar, Target, Briefcase, Menu, X, Wallet, User, LogOut, Activity } from 'lucide-react';
-import Dashboard from './pages/Dashboard';
-import Habits from './pages/Habits';
-import Planner from './pages/Planner';
-import Goals from './pages/Goals';
-import Projects from './pages/Projects';
-import Fitness from './pages/Fitness';
-import Finance from './pages/Finance';
+import { Routes, Route } from 'react-router-dom';
+import SplashScreen from './pages/SplashScreen';
 import Login from './pages/Login';
-import Register from './pages/Register';
-import Profile from './pages/Profile';
-import ProtectedRoute from './components/ProtectedRoute';
-import './index.css';
+import SignUp from './pages/SignUp';
+import ForgotPassword from './pages/ForgotPassword';
+import Home from './pages/Home';
+import Dashboard from './pages/Dashboard';
+import HabitTracker from './pages/HabitTracker';
+import DayPlanner from './pages/DayPlanner';
+import GoalPlanner from './pages/GoalPlanner';
+import MyProjects from './pages/MyProjects';
+import MyFitness from './pages/MyFitness';
+import MyFinances from './pages/MyFinances';
+import AccountSettings from './pages/AccountSettings';
+import './App.css';
 
-function Sidebar({ isOpen, setIsOpen, isMobile }) {
-  const navigate = useNavigate();
-  // Sidebar now renders on all devices
-
-  return (
-    <>
-      <aside className={`sidebar ${isOpen ? 'open' : 'collapsed'}`} style={{ display: 'flex', flexDirection: 'column' }}>
-        <div className="flex items-center justify-between mb-6" style={{ padding: '0 0.5rem' }}>
-          <div className="flex items-center gap-3">
-            <button className="btn btn-outline" style={{ padding: '0.25rem', border: 'none' }} onClick={() => setIsOpen(!isOpen)}>
-              <Menu size={24} color="var(--primary)" />
-            </button>
-            <div className="flex items-center gap-2 brand-text">
-              <Activity size={24} color="var(--primary)" />
-              <h2 style={{ marginBottom: 0, fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.5px' }}>TrackIt</h2>
-            </div>
-          </div>
-          {isMobile && (
-            <button className="btn btn-outline" style={{ padding: '0.25rem', border: 'none' }} onClick={() => setIsOpen(false)}>
-              <X size={20} />
-            </button>
-          )}
-        </div>
-        
-        <nav className="flex flex-col gap-2" style={{ flexDirection: 'column', flex: 1 }}>
-          <NavLink to="/" onClick={() => isMobile && setIsOpen(false)} className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
-            <Home size={20} style={{ minWidth: '20px' }} />
-            <span className="nav-text">Dashboard</span>
-            <span className="tooltip-text">Dashboard</span>
-          </NavLink>
-          <NavLink to="/habits" onClick={() => isMobile && setIsOpen(false)} className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
-            <CheckSquare size={20} style={{ minWidth: '20px' }} />
-            <span className="nav-text">Habits</span>
-            <span className="tooltip-text">Habits</span>
-          </NavLink>
-          <NavLink to="/planner" onClick={() => isMobile && setIsOpen(false)} className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
-            <Calendar size={20} style={{ minWidth: '20px' }} />
-            <span className="nav-text">Daily Planner</span>
-            <span className="tooltip-text">Daily Planner</span>
-          </NavLink>
-          <NavLink to="/goals" onClick={() => isMobile && setIsOpen(false)} className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
-            <Target size={20} style={{ minWidth: '20px' }} />
-            <span className="nav-text">Goals</span>
-            <span className="tooltip-text">Goals</span>
-          </NavLink>
-          <NavLink to="/projects" onClick={() => isMobile && setIsOpen(false)} className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
-            <Briefcase size={20} style={{ minWidth: '20px' }} />
-            <span className="nav-text">Projects</span>
-            <span className="tooltip-text">Projects</span>
-          </NavLink>
-          <NavLink to="/fitness" onClick={() => isMobile && setIsOpen(false)} className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
-            <Activity size={20} style={{ minWidth: '20px' }} />
-            <span className="nav-text">Fitness</span>
-            <span className="tooltip-text">Fitness</span>
-          </NavLink>
-          <NavLink to="/finance" onClick={() => isMobile && setIsOpen(false)} className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
-            <Wallet size={20} style={{ minWidth: '20px' }} />
-            <span className="nav-text">Finance</span>
-            <span className="tooltip-text">Finance</span>
-          </NavLink>
-        </nav>
-
-        <div className="sidebar-footer" style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem', marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <NavLink to="/profile" onClick={() => isMobile && setIsOpen(false)} className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
-            <User size={20} style={{ minWidth: '20px' }} />
-            <span className="nav-text">Profile</span>
-            <span className="tooltip-text">Profile</span>
-          </NavLink>
-          <button className="nav-link" style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', color: 'var(--danger)' }} onClick={() => navigate('/login')}>
-            <LogOut size={20} style={{ minWidth: '20px' }} />
-            <span className="nav-text">Logout</span>
-            <span className="tooltip-text" style={{ background: 'var(--danger)' }}>Logout</span>
-          </button>
-        </div>
-      </aside>
-    </>
-  );
-}
-
-function AppContent({ isOpen, setIsOpen, isMobile }) {
-  const location = useLocation();
-  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
-
-  return (
-    <div className="page-layout">
-      {!isAuthPage && isMobile && isOpen && (
-        <div className="sidebar-overlay" onClick={() => setIsOpen(false)} />
-      )}
-      {!isAuthPage && <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} isMobile={isMobile} />}
-      <main className={`main-content ${!isOpen && !isMobile && !isAuthPage ? 'expanded' : ''}`} style={isAuthPage ? { marginLeft: 0, padding: 0 } : {}}>
-        {isMobile && !isAuthPage && (
-          <div className="flex items-center p-3 glass mb-4" style={{ borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
-            <button className="btn btn-outline" style={{ padding: '0.25rem', border: 'none' }} onClick={() => setIsOpen(true)}>
-              <Menu size={24} color="var(--primary)" />
-            </button>
-            <div className="flex items-center gap-2 brand-text" style={{ marginLeft: '0.5rem' }}>
-              <Activity size={24} color="var(--primary)" />
-              <h2 style={{ marginBottom: 0, fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.5px' }}>TrackIt</h2>
-            </div>
-          </div>
-        )}
-        <Routes>
-          <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/habits" element={<ProtectedRoute><Habits /></ProtectedRoute>} />
-          <Route path="/planner" element={<ProtectedRoute><Planner /></ProtectedRoute>} />
-          <Route path="/goals" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
-          <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
-          <Route path="/fitness" element={<ProtectedRoute><Fitness /></ProtectedRoute>} />
-          <Route path="/finance" element={<ProtectedRoute><Finance /></ProtectedRoute>} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-        </Routes>
-      </main>
-    </div>
-  );
-}
+import { AuthProvider } from './context/AuthContext';
+import { ProtectedRoute, GuestRoute } from './components/ProtectedRoute';
 
 function App() {
-  const [isOpen, setIsOpen] = useState(window.innerWidth > 768);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-
-  useEffect(() => {
-    const handleResize = () => {
-      const mobile = window.innerWidth <= 768;
-      setIsMobile(mobile);
-      if (!mobile) setIsOpen(true);
-      else setIsOpen(false);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
   return (
-    <Router>
-      <AppContent isOpen={isOpen} setIsOpen={setIsOpen} isMobile={isMobile} />
-    </Router>
+    <AuthProvider>
+      <div className="app-container">
+        {/* Main Layout matches the theme instructions */}
+        <Routes>
+          <Route path="/" element={<SplashScreen />} />
+          
+          {/* Guest Only Routes (Redirects to dashboard if logged in) */}
+          <Route element={<GuestRoute />}>
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+          </Route>
+          
+          {/* Protected Routes (Redirects to login if NOT logged in) */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/home" element={<Home />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/habit-tracker" element={<HabitTracker />} />
+            <Route path="/day-planner" element={<DayPlanner />} />
+            <Route path="/goal-planner" element={<GoalPlanner />} />
+            <Route path="/my-projects" element={<MyProjects />} />
+            <Route path="/my-fitness" element={<MyFitness />} />
+            <Route path="/my-finances" element={<MyFinances />} />
+            <Route path="/account-settings" element={<AccountSettings />} />
+          </Route>
+        </Routes>
+      </div>
+    </AuthProvider>
   );
 }
 

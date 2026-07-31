@@ -2,14 +2,16 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
-const authRoutes = require('./routes/authRoutes');
-const habitRoutes = require('./routes/habitRoutes');
-const taskRoutes = require('./routes/taskRoutes');
-const projectRoutes = require('./routes/projectRoutes');
-const exerciseRoutes = require('./routes/exerciseRoutes');
-const transactionRoutes = require('./routes/transactionRoutes');
-const goalRoutes = require('./routes/goalRoutes');
-const budgetRoutes = require('./routes/budgetRoutes');
+const signUpRoutes = require('./routes/SignUpRoutes');
+const loginRoutes = require('./routes/LoginRoutes');
+const accountSettingsRoutes = require('./routes/AccountSettingsRoutes');
+const dashboardRoutes = require('./routes/DashboardRoutes');
+const habitTrackerRoutes = require('./routes/HabitTrackerRoutes');
+const dayPlannerRoutes = require('./routes/DayPlannerRoutes');
+const goalPlannerRoutes = require('./routes/GoalPlannerRoutes');
+const myProjectsRoutes = require('./routes/MyProjectsRoutes');
+const myFitnessRoutes = require('./routes/MyFitnessRoutes');
+const myFinancesRoutes = require('./routes/MyFinancesRoutes');
 
 // Load env vars
 dotenv.config();
@@ -32,14 +34,16 @@ app.use(cors({
 app.use(express.json());
 
 // API Routes
-app.use('/api/users', authRoutes);
-app.use('/api/habits', habitRoutes);
-app.use('/api/tasks', taskRoutes);
-app.use('/api/projects', projectRoutes);
-app.use('/api/exercises', exerciseRoutes);
-app.use('/api/transactions', transactionRoutes);
-app.use('/api/goals', goalRoutes);
-app.use('/api/budget', budgetRoutes);
+app.use('/api/signup', signUpRoutes);
+app.use('/api/login', loginRoutes);
+app.use('/api/accountsettings', accountSettingsRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/habittracker', habitTrackerRoutes);
+app.use('/api/dayplanner', dayPlannerRoutes);
+app.use('/api/goalplanner', goalPlannerRoutes);
+app.use('/api/myprojects', myProjectsRoutes);
+app.use('/api/myfitness', myFitnessRoutes);
+app.use('/api/myfinances', myFinancesRoutes);
 
 // Base route for health check
 app.get('/', (req, res) => {
