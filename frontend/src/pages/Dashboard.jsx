@@ -25,15 +25,15 @@ const Dashboard = () => {
       activeGoals: 0,
       activeProjects: 0,
       fitnessProgress: '0%',
-      currentBalance: '$0'
+      currentBalance: '₹0'
     },
     charts: {
-      habitsPct: 0,
-      tasksPct: 0,
-      goalsPct: 0,
-      projectsPct: 0,
-      fitnessPct: 0,
-      budgetPct: 0
+      habits: { segments: [], total: 0 },
+      tasks: { segments: [], total: 0 },
+      goals: { segments: [], total: 0 },
+      projects: { segments: [], total: 0 },
+      fitness: { segments: [], total: 0 },
+      budget: { segments: [], total: 0 }
     }
   });
   const [loading, setLoading] = useState(true);
@@ -84,32 +84,86 @@ const Dashboard = () => {
         
         {/* Module Pie Charts */}
         {[
-          { title: "Habits Completion", pct: charts.habitsPct, color: "#6366f1", icon: <CheckCircle size={18} className="text-[#6366f1]" /> },
-          { title: "Tasks Done", pct: charts.tasksPct, color: "#8b5cf6", icon: <Calendar size={18} className="text-[#8b5cf6]" /> },
-          { title: "Goal Progress", pct: charts.goalsPct, color: "#ec4899", icon: <Target size={18} className="text-[#ec4899]" /> },
-          { title: "Project Progress", pct: charts.projectsPct, color: "#14b8a6", icon: <Briefcase size={18} className="text-[#14b8a6]" /> },
-          { title: "Fitness Goals", pct: charts.fitnessPct, color: "#f59e0b", icon: <Dumbbell size={18} className="text-[#f59e0b]" /> },
-          { title: "Budget Used", pct: charts.budgetPct, color: "#3b82f6", icon: <Wallet size={18} className="text-[#3b82f6]" /> }
-        ].map((mod, i) => (
-          <div key={i} className="glass-panel p-6 flex flex-col items-center justify-center relative">
-            <h3 className="text-lg font-semibold mb-6 w-full border-b border-white/10 pb-3 flex items-center gap-2">
-              {mod.icon}
-              {mod.title}
-            </h3>
-            <div className="relative w-40 h-40 rounded-full border-4 border-white/5 flex items-center justify-center shadow-lg">
-              <div 
-                className="absolute inset-0 rounded-full"
-                style={{
-                  background: `conic-gradient(${mod.color} 0% ${mod.pct}%, rgba(255,255,255,0.05) ${mod.pct}% 100%)`,
-                  opacity: 0.9
-                }}
-              />
-              <div className="absolute inset-2 rounded-full bg-[#0f172a] flex items-center justify-center z-10 shadow-inner">
-                <span className="text-2xl font-bold">{mod.pct}%</span>
+          { title: "Habits Completion", data: charts.habits, icon: <CheckCircle size={18} className="text-[#6366f1]" /> },
+          { title: "Tasks Done", data: charts.tasks, icon: <Calendar size={18} className="text-[#8b5cf6]" /> },
+          { title: "Goal Progress", data: charts.goals, icon: <Target size={18} className="text-[#ec4899]" /> },
+          { title: "Project Progress", data: charts.projects, icon: <Briefcase size={18} className="text-[#14b8a6]" /> },
+          { title: "Fitness Goals", data: charts.fitness, icon: <Dumbbell size={18} className="text-[#f59e0b]" /> },
+          { title: "Budget Used", data: charts.budget, icon: <Wallet size={18} className="text-[#3b82f6]" /> }
+        ].map((mod, i) => {
+          const segments = mod.data?.segments || [];
+          const totalValue = segments.reduce((sum, s) => sum + s.value, 0);
+          
+          let currentOffset = 0;
+          const C = 2 * Math.PI * 40; // Circumference for r=40
+
+          return (
+            <div key={i} className="glass-panel p-6 flex flex-col items-center justify-center relative">
+              <h3 className="text-lg font-semibold mb-6 w-full border-b border-white/10 pb-3 flex items-center gap-2">
+                {mod.icon}
+                {mod.title}
+              </h3>
+              
+              {/* SVG Doughnut Chart */}
+              <div className="relative w-40 h-40 flex items-center justify-center shadow-lg rounded-full">
+                <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90 drop-shadow-xl overflow-visible">
+                  {/* Dark Center Background */}
+                  <circle cx="50" cy="50" r="32" fill="#0f172a" className="drop-shadow-sm" />
+                  
+                  {totalValue === 0 ? (
+                    <circle 
+                      cx="50" cy="50" r="40" 
+                      fill="transparent" stroke="rgba(255,255,255,0.05)" strokeWidth="16" 
+                    />
+                  ) : (
+                    segments.map((seg, idx) => {
+                      if (seg.value === 0) return null;
+                      const dash = (seg.value / totalValue) * C;
+                      const offset = currentOffset;
+                      currentOffset -= dash;
+                      
+                      const valStr = mod.title === "Budget Used" ? `₹${seg.value.toLocaleString()}` : seg.value;
+                      
+                      return (
+                        <circle 
+                          key={idx}
+                          cx="50" cy="50" r="40"
+                          fill="transparent"
+                          stroke={seg.color}
+                          strokeWidth="16"
+                          strokeDasharray={`${dash} ${C}`}
+                          strokeDashoffset={offset}
+                          className="transition-all duration-300 hover:stroke-opacity-80 cursor-pointer"
+                          strokeLinecap="butt"
+                        >
+                          <title>{seg.label}: {valStr}</title>
+                        </circle>
+                      );
+                    })
+                  )}
+                </svg>
+                
+                {/* Center Text */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                  <span className="text-xl font-bold">{mod.data?.total || 0}</span>
+                </div>
               </div>
+              
+              {/* Static Legend with Values */}
+              <div className="flex flex-wrap justify-center gap-4 mt-8 text-sm w-full">
+                {segments.map((seg, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: seg.color }}></div>
+                    <span className="text-slate-300 font-medium">
+                      {seg.label} <span className="text-white font-bold ml-1">{mod.title === "Budget Used" ? `₹${seg.value.toLocaleString()}` : seg.value}</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+              
             </div>
-          </div>
-        ))}
+          );
+        })}
 
       </div>
 

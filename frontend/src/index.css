@@ -78,11 +78,7 @@ a {
   transition: all 0.3s ease;
 }
 
-.glass-panel:hover {
-  background: var(--glass-hover-bg);
-  transform: translateY(-5px);
-  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.2);
-}
+
 
 .btn-primary {
   background: var(--accent-color);
@@ -93,7 +89,11 @@ a {
   border: none;
   cursor: pointer;
   transition: all 0.2s ease;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
   box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.39);
 }
 
@@ -106,8 +106,14 @@ a {
 .page-container {
   max-width: 1800px;
   margin: 0 auto;
-  padding: 2rem 3rem;
+  padding: 1rem 1rem;
   width: 100%;
+}
+
+@media (min-width: 768px) {
+  .page-container {
+    padding: 2rem 3rem;
+  }
 }
 
 /* Custom Scrollbar for inner elements */

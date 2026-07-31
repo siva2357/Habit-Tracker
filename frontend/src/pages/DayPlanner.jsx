@@ -22,6 +22,7 @@ const DayPlanner = () => {
   });
 
   const [taskToDelete, setTaskToDelete] = useState(null);
+  const [formError, setFormError] = useState('');
 
   const fetchTasks = async () => {
     try {
@@ -39,7 +40,11 @@ const DayPlanner = () => {
   }, []);
 
   const handleSaveTask = async () => {
-    if (!modalTask.title) return;
+    if (!modalTask.title.trim() || !modalTask.startTime || !modalTask.endTime) {
+      setFormError('Task Name, Start Time, and End Time are required.');
+      return;
+    }
+    setFormError('');
     try {
       const dateKey = selectedDate.toISOString().split('T')[0];
       if (modalTask._id) {
@@ -70,6 +75,7 @@ const DayPlanner = () => {
   };
 
   const openAddModal = () => {
+    setFormError('');
     setModalTask({ _id: null, title: '', description: '', startTime: '09:00', endTime: '10:00' });
     setIsAddModalOpen(true);
   };
@@ -82,6 +88,7 @@ const DayPlanner = () => {
       startTime: task.startTime,
       endTime: task.endTime
     });
+    setFormError('');
     setIsAddModalOpen(true);
   };
 
@@ -336,6 +343,7 @@ const DayPlanner = () => {
         title={modalTask._id ? "Edit Task" : "Add New Task"}
         onSave={handleSaveTask}
         saveText="Save Task"
+        error={formError}
       >
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">

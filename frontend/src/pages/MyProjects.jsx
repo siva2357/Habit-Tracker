@@ -296,7 +296,7 @@ const MyProjects = () => {
                              </h5>
                              <span className="text-xs text-slate-300 font-medium whitespace-nowrap mt-1">{t.date || 'Just now'}</span>
                            </div>
-                           <p className="text-sm text-slate-400 leading-snug pl-5">{t.description}</p>
+                           <p className="text-sm text-slate-400 leading-snug pl-5 break-words whitespace-pre-wrap overflow-hidden" style={{ wordBreak: 'break-word' }}>{t.description}</p>
                          </div>
                          <div className="flex justify-between items-center mt-auto pt-2 border-t border-white/5 w-full">
                            <span className={`text-xs px-2 py-0.5 rounded ${t.status === 'Done' || t.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-500' : t.status === 'In Progress' ? 'bg-accent/10 text-accent' : 'bg-slate-500/10 text-slate-400'}`}>

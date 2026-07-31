@@ -8,7 +8,7 @@ const GoalPlanner = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isProgressModalOpen, setIsProgressModalOpen] = useState(false);
   const [goals, setGoals] = useState([]);
-  const [goalStats, setGoalStats] = useState({ pendingGoalsCount: 0, completedGoalsCount: 0, notCompletedGoalsCount: 0 });
+  const [goalStats, setGoalStats] = useState({ pendingGoalsCount: 0, completedGoalsCount: 0, inProgressGoalsCount: 0 });
   const [loading, setLoading] = useState(true);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [goalToDelete, setGoalToDelete] = useState(null);
@@ -24,6 +24,7 @@ const GoalPlanner = () => {
     status: 'Pending',
     color: 'bg-[#3b82f6]' // Default color
   });
+  const [formError, setFormError] = useState('');
 
   const [progressUpdate, setProgressUpdate] = useState({
     goalId: null,
@@ -31,6 +32,7 @@ const GoalPlanner = () => {
     title: '',
     description: ''
   });
+  const [progressError, setProgressError] = useState('');
 
   const [openGoal, setOpenGoal] = useState(null);
 
@@ -60,7 +62,11 @@ const GoalPlanner = () => {
   }, []);
 
   const handleSaveGoal = async () => {
-    if (!newGoal.title || !newGoal.target) return;
+    if (!newGoal.title.trim() || !newGoal.target.trim()) {
+      setFormError('Goal Name and Target are required.');
+      return;
+    }
+    setFormError('');
     try {
       if (newGoal._id) {
         // Edit existing goal
@@ -91,6 +97,7 @@ const GoalPlanner = () => {
   };
 
   const openAddModal = () => {
+    setFormError('');
     setNewGoal({ _id: null, title: '', target: '', targetDate: '', description: '', status: 'Pending', color: 'bg-[#3b82f6]' });
     setIsAddModalOpen(true);
   };
@@ -105,6 +112,7 @@ const GoalPlanner = () => {
       status: goal.status || 'Pending',
       color: goal.color
     });
+    setFormError('');
     setIsAddModalOpen(true);
   };
 
@@ -127,6 +135,11 @@ const GoalPlanner = () => {
 
   const handleAddProgress = async () => {
     if (!progressUpdate.goalId) return;
+    if (!progressUpdate.title.trim()) {
+      setProgressError('Title is required.');
+      return;
+    }
+    setProgressError('');
     const goalToUpdate = goals.find(g => g._id === progressUpdate.goalId);
     if (!goalToUpdate) return;
 
@@ -164,6 +177,7 @@ const GoalPlanner = () => {
       title: progress.title,
       description: progress.description
     });
+    setProgressError('');
     setIsProgressModalOpen(true);
   };
 
@@ -206,12 +220,13 @@ const GoalPlanner = () => {
   };
 
   const openProgressModalForGoal = (goal) => {
+    setProgressError('');
     setProgressUpdate({ goalId: goal._id, progressIndex: null, title: '', description: '' });
     setIsProgressModalOpen(true);
   };
 
   // Use stats from API
-  const { pendingGoalsCount, completedGoalsCount, notCompletedGoalsCount } = goalStats;
+  const { pendingGoalsCount, completedGoalsCount, inProgressGoalsCount } = goalStats;
 
   return (
     <ModuleLayout
@@ -238,8 +253,8 @@ const GoalPlanner = () => {
           <div className="w-12 h-12 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center mb-2">
             <Circle size={24} />
           </div>
-          <h3 className="text-3xl font-bold">{notCompletedGoalsCount}</h3>
-          <p className="text-slate-400">Not Completed</p>
+          <h3 className="text-3xl font-bold">{inProgressGoalsCount}</h3>
+          <p className="text-slate-400">In Progress</p>
         </div>
       </div>
 
@@ -260,7 +275,7 @@ const GoalPlanner = () => {
                   <div className="flex flex-wrap items-center gap-3 mb-1">
                     <h3 className="text-xl font-bold">{goal.title}</h3>
                     <span className={`px-2 py-0.5 rounded text-xs font-bold border ${goal.status === 'Completed' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
-                        goal.status === 'Not Completed' ? 'bg-red-500/10 border-red-500/20 text-red-400' :
+                        goal.status === 'In Progress' ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400' :
                           'bg-accent/10 border-accent/20 text-accent'
                       }`}>{goal.status}</span>
                     <div className="flex items-center gap-1 ml-2">
@@ -316,7 +331,7 @@ const GoalPlanner = () => {
                               <h5 className="font-semibold text-white mb-0.5">{p.title}</h5>
                               <span className="text-xs text-slate-300 font-medium whitespace-nowrap mt-1">{p.date || 'Just now'}</span>
                             </div>
-                            <p className="text-sm text-slate-400 leading-snug">{p.description}</p>
+                            <p className="text-sm text-slate-400 leading-snug break-words whitespace-pre-wrap overflow-hidden" style={{ wordBreak: 'break-word' }}>{p.description}</p>
                           </div>
                           <div className="flex justify-end gap-2 mt-2 pt-2 border-t border-white/5 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button onClick={(e) => { e.stopPropagation(); openEditProgressModal(goal, p, i); }} className="p-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors" title="Edit Log">
@@ -354,6 +369,7 @@ const GoalPlanner = () => {
         title={newGoal._id ? "Edit Goal" : "Create New Goal"}
         onSave={handleSaveGoal}
         saveText={newGoal._id ? "Update Goal" : "Save Goal"}
+        error={formError}
       >
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
@@ -406,8 +422,8 @@ const GoalPlanner = () => {
               className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white outline-none focus:border-accent transition-colors appearance-none cursor-pointer"
             >
               <option value="Pending">Pending</option>
+              <option value="In Progress">In Progress</option>
               <option value="Completed">Completed</option>
-              <option value="Not Completed">Not Completed</option>
             </select>
           </div>
 
@@ -420,6 +436,7 @@ const GoalPlanner = () => {
         title="Add Progress Update"
         onSave={handleAddProgress}
         saveText="Save Progress"
+        error={progressError}
       >
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">

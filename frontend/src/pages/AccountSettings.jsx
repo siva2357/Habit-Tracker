@@ -55,8 +55,12 @@ const AccountSettings = () => {
         currentPassword: password.currentPassword,
         newPassword: password.newPassword
       });
-      setPasswordMsg({ type: 'success', text: 'Password updated successfully!' });
+      setPasswordMsg({ type: 'success', text: 'Password updated successfully! Redirecting to login...' });
       setPassword({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setTimeout(() => {
+        logout();
+        navigate('/login');
+      }, 1500);
     } catch (err) {
       setPasswordMsg({ type: 'error', text: err.response?.data?.message || 'Error changing password' });
     }
@@ -144,7 +148,7 @@ const AccountSettings = () => {
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-accent transition-colors" 
                   />
                 </div>
-                <button onClick={handleProfileUpdate} className="btn-primary px-8 py-3 rounded-xl shadow-lg shadow-accent/20">Save Profile</button>
+                <button onClick={handleProfileUpdate} className="btn-primary px-8 py-3 rounded-xl shadow-lg shadow-accent/20">Update Profile</button>
               </div>
             </div>
           </div>

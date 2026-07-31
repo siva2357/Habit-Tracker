@@ -1,7 +1,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
 
-const GlassModal = ({ isOpen, onClose, title, children, onSave, saveText = "Save" }) => {
+const GlassModal = ({ isOpen, onClose, title, children, onSave, saveText = "Save", error }) => {
   if (!isOpen) return null;
 
   return (
@@ -23,6 +23,12 @@ const GlassModal = ({ isOpen, onClose, title, children, onSave, saveText = "Save
             <X size={24} />
           </button>
         </div>
+        
+        {error && (
+          <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+            {error}
+          </div>
+        )}
         
         <div className="flex-1 overflow-y-auto mb-6 no-scrollbar">
           {children}

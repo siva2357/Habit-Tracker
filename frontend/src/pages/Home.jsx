@@ -52,7 +52,7 @@ const Home = () => {
         gap: '24px' 
       }}>
         {modules.map(mod => (
-          <Link key={mod.path} to={mod.path} className="glass-panel" style={{ 
+          <Link key={mod.path} to={mod.path} className="glass-panel hover:-translate-y-1.5 hover:bg-white/10 transition-all duration-300 group" style={{ 
             padding: '32px 24px',
             display: 'flex',
             flexDirection: 'column',

@@ -19,6 +19,8 @@ const HabitTracker = () => {
   
   // Delete Confirmation State
   const [habitToDelete, setHabitToDelete] = useState(null);
+  
+  const [formError, setFormError] = useState('');
 
   const fetchHabits = async () => {
     try {
@@ -37,7 +39,11 @@ const HabitTracker = () => {
   }, []);
 
   const handleSaveHabit = async () => {
-    if (!modalHabit.title) return;
+    if (!modalHabit.title.trim()) {
+      setFormError('Habit Name is required.');
+      return;
+    }
+    setFormError('');
     try {
       if (modalHabit._id) {
         // Edit existing
@@ -62,11 +68,13 @@ const HabitTracker = () => {
   };
 
   const openAddModal = () => {
+    setFormError('');
     setModalHabit({ _id: null, title: '', description: '' });
     setIsAddModalOpen(true);
   };
 
   const openEditModal = (habit) => {
+    setFormError('');
     setModalHabit({ _id: habit._id, title: habit.title, description: habit.description });
     setIsAddModalOpen(true);
   };
@@ -352,6 +360,7 @@ const HabitTracker = () => {
         title={modalHabit._id ? "Edit Habit" : "Add New Habit"}
         onSave={handleSaveHabit}
         saveText="Save Habit"
+        error={formError}
       >
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">

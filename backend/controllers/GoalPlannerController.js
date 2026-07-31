@@ -8,7 +8,7 @@ exports.getAll = async (req, res) => {
     const stats = {
       pendingGoalsCount: items.filter(g => g.status === 'Pending').length,
       completedGoalsCount: items.filter(g => g.status === 'Completed').length,
-      notCompletedGoalsCount: items.filter(g => g.status === 'Not Completed').length,
+      inProgressGoalsCount: items.filter(g => g.status === 'In Progress').length,
     };
     
     res.json({ items, stats });

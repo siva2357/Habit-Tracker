@@ -23,6 +23,7 @@ const MyFinances = () => {
   });
 
   const [balanceInput, setBalanceInput] = useState('');
+  const [balanceTxId, setBalanceTxId] = useState(null);
 
   const fetchTransactions = async () => {
     try {
@@ -105,30 +106,50 @@ const MyFinances = () => {
     if (!balanceInput) return;
     try {
       const dateKey = selectedDate.toISOString().split('T')[0];
-      await api.post('/myfinances', {
+      const payload = {
         title: 'Initial Balance / Deposit',
         amount: Math.abs(Number(balanceInput)),
         type: 'income',
         category: 'Balance',
-        date: dateKey
-      });
+        date: balanceTxId ? undefined : dateKey // Don't change date if updating
+      };
+
+      if (balanceTxId) {
+        await api.put(`/myfinances/${balanceTxId}`, payload);
+      } else {
+        await api.post('/myfinances', payload);
+      }
+      
       setIsBalanceModalOpen(false);
       setBalanceInput('');
+      setBalanceTxId(null);
       fetchTransactions();
     } catch (error) {
-      console.error("Failed to add balance:", error);
+      console.error("Failed to add/edit balance:", error);
     }
   };
 
+  const balanceTx = transactions.find(t => t.category === 'Balance');
+  const openBalanceModal = () => {
+    if (balanceTx) {
+      setBalanceTxId(balanceTx._id);
+      setBalanceInput(Math.abs(balanceTx.amount).toString());
+    } else {
+      setBalanceTxId(null);
+      setBalanceInput('');
+    }
+    setIsBalanceModalOpen(true);
+  };
+
   const selectedDateKey = selectedDate.toISOString().split('T')[0];
-  const todaysTx = transactions.filter(t => t.date === selectedDateKey);
+  const todaysTx = transactions.filter(t => t.date === selectedDateKey && t.category !== 'Balance');
 
   // Calculations
   const totalBalance = transactions.reduce((acc, curr) => acc + curr.amount, 0);
   
-  // Calculate income/expenses for the current month
+  // Calculate income/expenses for the current month (Excluding Initial Balance deposits)
   const currentMonthPrefix = selectedDateKey.substring(0, 7);
-  const monthTxs = transactions.filter(t => t.date && t.date.startsWith(currentMonthPrefix));
+  const monthTxs = transactions.filter(t => t.date && t.date.startsWith(currentMonthPrefix) && t.category !== 'Balance');
   const monthIncome = monthTxs.filter(t => t.type === 'income').reduce((acc, curr) => acc + curr.amount, 0);
   const monthExpenses = monthTxs.filter(t => t.type === 'expense').reduce((acc, curr) => acc + Math.abs(curr.amount), 0);
   
@@ -196,8 +217,9 @@ const MyFinances = () => {
     <ModuleLayout 
       title="My Finances" 
       leftPanel={<LeftPanel />}
-      onAdd={() => setIsBalanceModalOpen(true)}
-      addText="Add Balance"
+      onAdd={openBalanceModal}
+      addText={balanceTx ? "Edit Balance" : "Add Balance"}
+      addIcon={balanceTx ? Pencil : Plus}
     >
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="glass-panel p-6 flex flex-col justify-center relative overflow-hidden">
@@ -331,9 +353,9 @@ const MyFinances = () => {
       <GlassModal 
         isOpen={isBalanceModalOpen} 
         onClose={() => setIsBalanceModalOpen(false)}
-        title="Add Balance"
+        title={balanceTxId ? "Edit Balance" : "Add Balance"}
         onSave={handleAddBalance}
-        saveText="Update Balance"
+        saveText={balanceTxId ? "Update Balance" : "Save Balance"}
       >
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">

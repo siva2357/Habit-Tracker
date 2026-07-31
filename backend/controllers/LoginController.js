@@ -36,3 +36,20 @@ exports.forgotPassword = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+exports.resetPasswordDirect = async (req, res) => {
+  const { email, newPassword } = req.body;
+  try {
+    const user = await AccountSettings.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    user.password = newPassword;
+    await user.save();
+    
+    res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

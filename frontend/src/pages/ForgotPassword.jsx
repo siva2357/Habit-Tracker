@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png';
 import api from '../services/api';
 
@@ -8,6 +8,7 @@ const ForgotPassword = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,8 +17,11 @@ const ForgotPassword = () => {
     setLoading(true);
 
     try {
-      const response = await api.post('/login/forgot-password', { email });
-      setMessage(response.data.message || 'Password reset link sent to your email.');
+      await api.post('/login/forgot-password', { email });
+      setMessage('User verified. Redirecting to reset password...');
+      setTimeout(() => {
+        navigate('/reset-password', { state: { email } });
+      }, 1000);
     } catch (err) {
       setError(err.response?.data?.message || 'Something went wrong. Please try again.');
     } finally {
@@ -53,7 +57,7 @@ const ForgotPassword = () => {
         />
         <h2 style={{ fontSize: '2rem', margin: '0 0 0.5rem' }}>Forgot Password</h2>
         <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
-          Enter your email to receive a reset link
+          Enter your email to reset your password
         </p>
 
         {error && <div style={{ color: '#ff6b6b', marginBottom: '1rem', background: 'rgba(255, 107, 107, 0.1)', padding: '10px', borderRadius: '8px' }}>{error}</div>}
@@ -80,7 +84,7 @@ const ForgotPassword = () => {
           </div>
 
           <button type="submit" className="btn-primary" style={{ width: '100%' }} disabled={loading}>
-            {loading ? 'Sending...' : 'Send Reset Link'}
+            {loading ? 'Verifying...' : 'Go to Reset Password'}
           </button>
         </form>
 

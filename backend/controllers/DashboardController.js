@@ -36,50 +36,87 @@ exports.getDashboardStats = async (req, res) => {
     // Calculate balance
     let balance = 0;
     transactions.forEach(t => {
-      if (t.type === 'Income') balance += t.amount;
-      else if (t.type === 'Expense') balance -= t.amount;
+      balance += t.amount;
     });
 
-    // Calculate Pie Chart Percentages
-    const calcPct = (part, total) => total === 0 ? 0 : Math.round((part / total) * 100);
+    // Calculate Pie Chart Percentages (No longer needed for single % but kept logic for segments)
+    const todayStr = new Date().toISOString().split('T')[0];
 
-    // Habits Completion % (mock based on tracking size)
-    let totalTracked = 0;
+    // Habits
+    let habitsCompletedToday = 0;
+    let habitsNotCompletedToday = 0;
     habits.forEach(h => {
-      if (h.tracking && typeof h.tracking.size === 'number') {
-        totalTracked += h.tracking.size;
-      } else if (h.tracking && typeof h.tracking === 'object') {
-        totalTracked += Object.keys(h.tracking).length;
+      if (h.tracking && h.tracking[todayStr] === true) {
+        habitsCompletedToday++;
+      } else {
+        habitsNotCompletedToday++;
       }
     });
-    const habitsPct = calcPct(totalTracked, habits.length * 7); // Assuming 7 days track
+    const habitsTotal = habits.length;
+    const habitsSegments = [
+      { label: 'Done', value: habitsCompletedToday, color: '#6366f1' },
+      { label: 'Not Done', value: habitsNotCompletedToday, color: '#4f46e5' } // slightly darker
+    ];
 
-    // Tasks Done %
-    const completedTasks = tasks.filter(t => t.completed).length;
-    const tasksPct = calcPct(completedTasks, tasks.length);
+    // Tasks (Day Planner)
+    const tasksPending = tasks.filter(t => t.status === 'created').length;
+    const tasksCompleted = tasks.filter(t => t.status === 'completed').length;
+    const tasksNotCompleted = tasks.filter(t => t.status === 'not_completed').length;
+    const tasksTotal = tasks.length;
+    const tasksSegments = [
+      { label: 'Pending', value: tasksPending, color: '#8b5cf6' },
+      { label: 'Completed', value: tasksCompleted, color: '#10b981' },
+      { label: 'Not Completed', value: tasksNotCompleted, color: '#ef4444' }
+    ];
 
-    // Goal Progress %
-    const totalGoalProgress = goals.reduce((acc, g) => acc + (g.progress || 0), 0);
-    const goalsPct = calcPct(totalGoalProgress, goals.length * 100);
+    // Goals
+    const goalsPending = goals.filter(g => g.status === 'Pending').length;
+    const goalsInProgress = goals.filter(g => g.status === 'In Progress').length;
+    const goalsCompleted = goals.filter(g => g.status === 'Completed').length;
+    const goalsTotal = goals.length;
+    const goalsSegments = [
+      { label: 'Pending', value: goalsPending, color: '#ec4899' },
+      { label: 'In Progress', value: goalsInProgress, color: '#f59e0b' },
+      { label: 'Completed', value: goalsCompleted, color: '#10b981' }
+    ];
 
-    // Project Progress %
-    let totalProjectTasks = 0;
-    let completedProjectTasks = 0;
+    // Projects
+    let projPending = 0;
+    let projInProgress = 0;
+    let projCompleted = 0;
     projects.forEach(p => {
-      if (p.tasks) {
-        totalProjectTasks += p.tasks.length;
-        completedProjectTasks += p.tasks.filter(t => t.status === 'Completed').length;
-      }
+      if (p.status === 'Pending') projPending++;
+      else if (p.status === 'In Progress') projInProgress++;
+      else if (p.status === 'Completed') projCompleted++;
+      else projPending++;
     });
-    const projectsPct = calcPct(completedProjectTasks, totalProjectTasks);
+    const projectsTotal = projects.length;
+    const projectsSegments = [
+      { label: 'Pending', value: projPending, color: '#14b8a6' },
+      { label: 'In Progress', value: projInProgress, color: '#f59e0b' },
+      { label: 'Completed', value: projCompleted, color: '#10b981' }
+    ];
 
-    // Fitness Goals % (mock)
-    const fitnessPct = fitnessLogs.length > 0 ? Math.min(100, Math.round((fitnessLogs.length / 30) * 100)) : 0;
+    // Fitness
+    const walkCount = fitnessLogs.filter(l => l.type === 'Walking').length;
+    const weightCount = fitnessLogs.filter(l => l.type === 'Weight Training').length;
+    const bodyCount = fitnessLogs.filter(l => l.type === 'Bodyweight').length;
+    const fitnessTotal = fitnessLogs.length;
+    const fitnessSegments = [
+      { label: 'Walking', value: walkCount, color: '#f59e0b' },
+      { label: 'Weight Training', value: weightCount, color: '#3b82f6' },
+      { label: 'Bodyweight', value: bodyCount, color: '#ec4899' }
+    ];
 
-    // Budget Used %
-    const totalIncome = transactions.filter(t => t.type === 'Income').reduce((a, b) => a + b.amount, 0);
-    const totalExpense = transactions.filter(t => t.type === 'Expense').reduce((a, b) => a + b.amount, 0);
-    const budgetPct = calcPct(totalExpense, totalIncome);
+    // Budget
+    const incomeAmt = transactions.filter(t => t.type === 'income' && t.category !== 'Balance').reduce((a, b) => a + Math.abs(b.amount), 0);
+    const expenseAmt = transactions.filter(t => t.type === 'expense').reduce((a, b) => a + Math.abs(b.amount), 0);
+    const balanceAmt = balance; // calculated above
+    const budgetSegments = [
+      { label: 'Income', value: incomeAmt, color: '#10b981' },
+      { label: 'Expenses', value: expenseAmt, color: '#ef4444' },
+      { label: 'Balance', value: balanceAmt, color: '#3b82f6' }
+    ];
 
     res.json({
       topStats: {
@@ -88,15 +125,15 @@ exports.getDashboardStats = async (req, res) => {
         activeGoals,
         activeProjects,
         fitnessProgress,
-        currentBalance: '$' + balance.toLocaleString()
+        currentBalance: '₹' + balance.toLocaleString()
       },
       charts: {
-        habitsPct,
-        tasksPct,
-        goalsPct,
-        projectsPct,
-        fitnessPct,
-        budgetPct
+        habits: { segments: habitsSegments, total: habitsTotal },
+        tasks: { segments: tasksSegments, total: tasksTotal },
+        goals: { segments: goalsSegments, total: goalsTotal },
+        projects: { segments: projectsSegments, total: projectsTotal },
+        fitness: { segments: fitnessSegments, total: fitnessTotal },
+        budget: { segments: budgetSegments, total: `₹${balanceAmt.toLocaleString()}` }
       }
     });
   } catch (err) {

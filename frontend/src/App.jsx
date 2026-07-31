@@ -3,6 +3,7 @@ import SplashScreen from './pages/SplashScreen';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
 import HabitTracker from './pages/HabitTracker';
@@ -30,6 +31,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
           </Route>
           
           {/* Protected Routes (Redirects to login if NOT logged in) */}

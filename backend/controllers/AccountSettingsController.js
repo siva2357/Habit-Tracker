@@ -1,5 +1,11 @@
 const AccountSettings = require('../models/AccountSettings');
 const bcrypt = require('bcryptjs');
+const DayPlanner = require('../models/DayPlanner');
+const GoalPlanner = require('../models/GoalPlanner');
+const HabitTracker = require('../models/HabitTracker');
+const MyFinances = require('../models/MyFinances');
+const MyFitness = require('../models/MyFitness');
+const MyProjects = require('../models/MyProjects');
 
 // Update user profile
 exports.updateProfile = async (req, res) => {
@@ -56,12 +62,21 @@ exports.changePassword = async (req, res) => {
 // Delete Account
 exports.deleteAccount = async (req, res) => {
   try {
-    const user = await AccountSettings.findByIdAndDelete(req.user._id);
+    const userId = req.user._id;
+    const user = await AccountSettings.findByIdAndDelete(userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    // Ideally, here you would also delete related data (Habits, Projects, etc)
-    res.json({ message: 'Account deleted successfully' });
+    
+    // Delete all related data for a clean slate
+    await DayPlanner.deleteMany({ user: userId });
+    await GoalPlanner.deleteMany({ user: userId });
+    await HabitTracker.deleteMany({ user: userId });
+    await MyFinances.deleteMany({ user: userId });
+    await MyFitness.deleteMany({ user: userId });
+    await MyProjects.deleteMany({ user: userId });
+
+    res.json({ message: 'Account and all associated data deleted successfully' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
