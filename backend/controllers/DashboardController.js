@@ -46,7 +46,7 @@ exports.getDashboardStats = async (req, res) => {
     let habitsCompletedToday = 0;
     let habitsNotCompletedToday = 0;
     habits.forEach(h => {
-      if (h.tracking && h.tracking[todayStr] === true) {
+      if (h.tracking && h.tracking.get(todayStr) === true) {
         habitsCompletedToday++;
       } else {
         habitsNotCompletedToday++;

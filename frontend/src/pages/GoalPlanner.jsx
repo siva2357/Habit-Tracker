@@ -414,17 +414,20 @@ const GoalPlanner = () => {
             ></textarea>
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 relative">
             <label className="text-sm text-slate-400">Status</label>
-            <select
-              value={newGoal.status}
-              onChange={(e) => setNewGoal({ ...newGoal, status: e.target.value })}
-              className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white outline-none focus:border-accent transition-colors appearance-none cursor-pointer"
-            >
-              <option value="Pending">Pending</option>
-              <option value="In Progress">In Progress</option>
-              <option value="Completed">Completed</option>
-            </select>
+            <div className="relative">
+              <select
+                value={newGoal.status}
+                onChange={(e) => setNewGoal({ ...newGoal, status: e.target.value })}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white outline-none focus:border-accent transition-colors appearance-none cursor-pointer"
+              >
+                <option value="Pending" className="bg-[#0f172a] text-white">Pending</option>
+                <option value="In Progress" className="bg-[#0f172a] text-white">In Progress</option>
+                <option value="Completed" className="bg-[#0f172a] text-white">Completed</option>
+              </select>
+              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
+            </div>
           </div>
 
         </div>
