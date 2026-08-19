@@ -1,133 +1,138 @@
 import React, { useState, useEffect } from 'react';
 import ModuleLayout from '../components/ModuleLayout';
 import GlassModal from '../components/GlassModal';
-import { Dumbbell, Activity, Flame, Timer, Play, Pencil, Trash2, Plus } from 'lucide-react';
+import { Check, X, Flame, Trophy, Calendar as CalendarIcon, Target, Pencil, Trash2, Dumbbell } from 'lucide-react';
 import api from '../services/api';
 
 const MyFitness = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [workoutType, setWorkoutType] = useState('Walking');
-  const [workouts, setWorkouts] = useState([]);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [fitnessData, setFitnessData] = useState([]);
+  const [statsData, setStatsData] = useState({ overallPct: 0, currentStreak: 0, longestStreak: 0, totalDone: 0 });
   const [loading, setLoading] = useState(true);
+  
+  // Selected Date State
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [workoutToDelete, setWorkoutToDelete] = useState(null);
+  // Modal State for Add/Edit
+  const [modalFitness, setModalFitness] = useState({ _id: null, title: '', description: '' });
+  
+  // Delete Confirmation State
+  const [fitnessToDelete, setFitnessToDelete] = useState(null);
+  
+  const [formError, setFormError] = useState('');
 
-  const [newWorkout, setNewWorkout] = useState({
-    _id: null,
-    name: '',
-    duration: '',
-    calories: 0,
-    steps: 0,
-    sets: 0,
-    reps: 0
-  });
-
-  const fetchWorkouts = async () => {
+  const fetchFitness = async () => {
     try {
       const { data } = await api.get('/myfitness');
-      setWorkouts(data);
+      setFitnessData(data.items);
+      setStatsData(data.stats);
     } catch (error) {
-      console.error("Failed to fetch workouts:", error);
+      console.error("Failed to fetch fitness data:", error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchWorkouts();
+    fetchFitness();
   }, []);
 
-  const handleAddWorkout = async () => {
+  const handleSaveFitness = async () => {
+    if (!modalFitness.title.trim()) {
+      setFormError('Exercise Name is required.');
+      return;
+    }
+    setFormError('');
     try {
-      const dateKey = selectedDate.toISOString().split('T')[0];
-      const payload = {
-        type: workoutType,
-        name: newWorkout.name || workoutType,
-        duration: newWorkout.duration || '30m',
-        calories: Number(newWorkout.calories) || 0,
-        steps: Number(newWorkout.steps) || 0,
-        sets: Number(newWorkout.sets) || 0,
-        reps: Number(newWorkout.reps) || 0,
-        date: dateKey
-      };
-      if (newWorkout._id) {
-        await api.put(`/myfitness/${newWorkout._id}`, payload);
+      if (modalFitness._id) {
+        // Edit existing
+        await api.put(`/myfitness/${modalFitness._id}`, {
+          title: modalFitness.title,
+          description: modalFitness.description
+        });
       } else {
-        await api.post('/myfitness', payload);
+        // Create new
+        await api.post('/myfitness', {
+          title: modalFitness.title,
+          description: modalFitness.description,
+          tracking: {}
+        });
       }
       setIsAddModalOpen(false);
-      setNewWorkout({ _id: null, name: '', duration: '', calories: 0, steps: 0, sets: 0, reps: 0 });
-      fetchWorkouts();
+      setModalFitness({ _id: null, title: '', description: '' });
+      fetchFitness();
     } catch (error) {
-      console.error("Failed to save workout:", error);
+      console.error("Failed to save exercise:", error);
     }
   };
 
   const openAddModal = () => {
-    setNewWorkout({ _id: null, name: '', duration: '', calories: 0, steps: 0, sets: 0, reps: 0 });
-    setWorkoutType('Walking');
+    setFormError('');
+    setModalFitness({ _id: null, title: '', description: '' });
     setIsAddModalOpen(true);
   };
 
-  const openEditModal = (w) => {
-    setNewWorkout({
-      _id: w._id,
-      name: w.name,
-      duration: w.duration,
-      calories: w.calories || 0,
-      steps: w.steps || 0,
-      sets: w.sets || 0,
-      reps: w.reps || 0
-    });
-    setWorkoutType(w.type);
+  const openEditModal = (fitness) => {
+    setFormError('');
+    setModalFitness({ _id: fitness._id, title: fitness.title, description: fitness.description });
     setIsAddModalOpen(true);
   };
 
-  const confirmDeleteWorkout = (w) => {
-    setWorkoutToDelete(w);
+  const confirmDelete = (fitness) => {
+    setFitnessToDelete(fitness);
     setIsDeleteModalOpen(true);
   };
 
-  const executeDeleteWorkout = async () => {
-    if (!workoutToDelete) return;
+  const executeDelete = async () => {
+    if (!fitnessToDelete) return;
     try {
-      await api.delete(`/myfitness/${workoutToDelete._id}`);
+      await api.delete(`/myfitness/${fitnessToDelete._id}`);
       setIsDeleteModalOpen(false);
-      setWorkoutToDelete(null);
-      fetchWorkouts();
+      setFitnessToDelete(null);
+      fetchFitness();
     } catch (error) {
-      console.error("Failed to delete workout:", error);
+      console.error("Failed to delete exercise:", error);
     }
   };
 
-  const selectedDateKey = selectedDate.toISOString().split('T')[0];
-  const todaysWorkouts = workouts.filter(w => w.date === selectedDateKey);
-
-  // Stats calculation
-  const totalCalories = workouts.reduce((acc, curr) => acc + (curr.calories || 0), 0);
-  const totalWorkouts = workouts.length;
-  // Approximation for active time based on 'm' and 'h' parsing
-  const totalMinutes = workouts.reduce((acc, curr) => {
-    if (!curr.duration) return acc;
-    let mins = 0;
-    if (curr.duration.includes('h')) {
-      const parts = curr.duration.split('h');
-      mins += parseInt(parts[0]) * 60;
-      if (parts[1] && parts[1].includes('m')) {
-        mins += parseInt(parts[1]);
-      }
-    } else if (curr.duration.includes('m')) {
-      mins += parseInt(curr.duration);
+  const toggleFitnessDay = async (fitness, status) => {
+    // status should be true (done) or false (not done)
+    const dateKey = selectedDate.toISOString().split('T')[0];
+    
+    // Check current status
+    const currentStatus = fitness.tracking ? fitness.tracking[dateKey] : undefined;
+    let nextStatus = status;
+    
+    // If clicking the same button that is already active, unselect it (clear tracking for that day)
+    if (currentStatus === status) {
+      nextStatus = undefined;
     }
-    return acc + mins;
-  }, 0);
-  const activeHours = Math.floor(totalMinutes / 60);
-  const activeMins = totalMinutes % 60;
-  
-  const totalVolume = workouts.reduce((acc, curr) => acc + ((curr.sets || 0) * (curr.reps || 0) * 10), 0); // Mock weight 10kg
 
+    // Optimistic UI Update
+    setFitnessData(prev => prev.map(f => {
+      if (f._id === fitness._id) {
+        return {
+          ...f,
+          tracking: { ...f.tracking, [dateKey]: nextStatus }
+        };
+      }
+      return f;
+    }));
+
+    try {
+      await api.put(`/myfitness/${fitness._id}`, {
+        tracking: { ...fitness.tracking, [dateKey]: nextStatus }
+      });
+      // Refresh to update stats from backend
+      fetchFitness();
+    } catch (error) {
+      console.error("Failed to update tracking:", error);
+      fetchFitness(); // Revert on failure
+    }
+  };
+
+  // Calendar Left Panel
   const LeftPanel = () => (
     <div className="flex flex-col gap-6">
       <div className="glass-panel p-4 flex justify-center">
@@ -135,16 +140,22 @@ const MyFitness = () => {
           <div className="flex justify-between items-center mb-4">
             <span className="font-bold">{selectedDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
             <div className="flex gap-2">
-              <button onClick={() => {
-                const d = new Date(selectedDate);
-                d.setMonth(d.getMonth() - 1);
-                setSelectedDate(d);
-              }} className="p-1 hover:bg-white/10 rounded">&lt;</button>
-              <button onClick={() => {
-                const d = new Date(selectedDate);
-                d.setMonth(d.getMonth() + 1);
-                setSelectedDate(d);
-              }} className="p-1 hover:bg-white/10 rounded">&gt;</button>
+              <button 
+                onClick={() => {
+                  const d = new Date(selectedDate);
+                  d.setMonth(d.getMonth() - 1);
+                  setSelectedDate(d);
+                }} 
+                className="p-1 hover:bg-white/10 rounded"
+              >&lt;</button>
+              <button 
+                onClick={() => {
+                  const d = new Date(selectedDate);
+                  d.setMonth(d.getMonth() + 1);
+                  setSelectedDate(d);
+                }}
+                className="p-1 hover:bg-white/10 rounded"
+              >&gt;</button>
             </div>
           </div>
           <div className="grid grid-cols-7 gap-1 text-center text-xs mb-2 text-slate-400">
@@ -174,217 +185,218 @@ const MyFitness = () => {
     </div>
   );
 
+  const selectedDateKey = selectedDate.toISOString().split('T')[0];
+
+  // Calculate Daily Stats
+  let dailyCompleted = 0;
+  let dailyTotal = fitnessData.length;
+  
+  fitnessData.forEach(f => {
+    if (f.tracking && f.tracking[selectedDateKey] === true) {
+      dailyCompleted++;
+    }
+  });
+
+  const dailyPct = dailyTotal > 0 ? Math.round((dailyCompleted / dailyTotal) * 100) : 0;
+
   return (
     <ModuleLayout 
       title="My Fitness" 
       leftPanel={<LeftPanel />}
       onAdd={openAddModal}
-      addText="Log Workout"
+      addText="Add Exercise"
     >
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="glass-panel p-6 flex flex-col items-center text-center gap-2">
-          <div className="w-12 h-12 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center mb-2">
+      
+      <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h2 className="text-2xl font-bold mb-1">{selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</h2>
+          <p className="text-slate-400 m-0">Daily Exercise Checklist</p>
+        </div>
+      </div>
+
+      {/* Summary Stats at the Top */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div className="glass-panel p-4 flex items-center gap-4 hover:bg-white/10 transition-colors">
+          <div className="w-12 h-12 rounded-xl bg-[#3b82f6]/20 text-[#3b82f6] flex items-center justify-center">
+            <Target size={24} />
+          </div>
+          <div>
+            <p className="text-sm text-slate-400 m-0">Overall</p>
+            <h3 className="text-2xl font-bold m-0">{statsData.overallPct}%</h3>
+          </div>
+        </div>
+        <div className="glass-panel p-4 flex items-center gap-4 hover:bg-white/10 transition-colors">
+          <div className="w-12 h-12 rounded-xl bg-[#f59e0b]/20 text-[#f59e0b] flex items-center justify-center">
             <Flame size={24} />
           </div>
-          <p className="text-sm text-slate-400">Total Calories</p>
-          <h3 className="text-2xl font-bold">{totalCalories.toLocaleString()}</h3>
-        </div>
-        <div className="glass-panel p-6 flex flex-col items-center text-center gap-2">
-          <div className="w-12 h-12 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center mb-2">
-            <Timer size={24} />
-          </div>
-          <p className="text-sm text-slate-400">Active Time</p>
-          <h3 className="text-2xl font-bold">{activeHours}h {activeMins}m</h3>
-        </div>
-        <div className="glass-panel p-6 flex flex-col items-center text-center gap-2">
-          <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center mb-2">
-            <Activity size={24} />
-          </div>
-          <p className="text-sm text-slate-400">Total Workouts</p>
-          <h3 className="text-2xl font-bold">{totalWorkouts}</h3>
-        </div>
-        <div className="glass-panel p-6 flex flex-col items-center text-center gap-2">
-          <div className="w-12 h-12 rounded-full bg-purple-500/20 text-purple-500 flex items-center justify-center mb-2">
-            <Dumbbell size={24} />
-          </div>
-          <p className="text-sm text-slate-400">Est. Volume</p>
-          <h3 className="text-2xl font-bold">{(totalVolume / 1000).toFixed(1)}k kg</h3>
-        </div>
-      </div>
-
-      <div className="glass-panel p-6">
-        <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
           <div>
-            <h2 className="text-2xl font-bold">{selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</h2>
-            <p className="text-slate-400 m-0">You logged {todaysWorkouts.length} workouts today.</p>
+            <p className="text-sm text-slate-400 m-0">Current Streak</p>
+            <h3 className="text-2xl font-bold m-0">{statsData.currentStreak} Days</h3>
           </div>
         </div>
-
-        <div className="flex flex-col gap-4">
-          {loading ? (
-            <div className="text-center p-8 text-accent">Loading...</div>
-          ) : todaysWorkouts.map((w) => (
-            <div key={w._id} className="glass-panel p-4 flex items-center justify-between hover:bg-white/5 transition-colors">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-accent">
-                  <Dumbbell size={20} />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-lg">{w.name}</h4>
-                  <p className="text-sm text-slate-400">{w.type} • {w.duration}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-6">
-                {w.type === 'Walking' ? (
-                  <>
-                    <div className="flex flex-col items-end">
-                      <span className="text-slate-500 text-xs uppercase tracking-wider">Steps</span>
-                      <span className="font-bold text-accent text-lg">{w.steps || 0}</span>
-                    </div>
-                    <div className="flex flex-col items-end">
-                      <span className="text-slate-500 text-xs uppercase tracking-wider">Calories</span>
-                      <span className="font-bold text-orange-400 text-lg">{w.calories || 0}</span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex flex-col items-end">
-                      <span className="text-slate-500 text-xs uppercase tracking-wider">Sets</span>
-                      <span className="font-bold text-emerald-400 text-lg">{w.sets || 0}</span>
-                    </div>
-                    <div className="flex flex-col items-end">
-                      <span className="text-slate-500 text-xs uppercase tracking-wider">Reps</span>
-                      <span className="font-bold text-purple-400 text-lg">{w.reps || 0}</span>
-                    </div>
-                  </>
-                )}
-                <div className="flex items-center gap-2">
-                   <button onClick={() => openEditModal(w)} className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 p-1.5 rounded-lg transition-colors" title="Edit Workout">
-                     <Pencil size={16} />
-                   </button>
-                   <button onClick={() => confirmDeleteWorkout(w)} className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-1.5 rounded-lg transition-colors" title="Delete Workout">
-                     <Trash2 size={16} />
-                   </button>
-                </div>
-              </div>
-            </div>
-          ))}
-          {!loading && todaysWorkouts.length === 0 && (
-            <div className="text-center p-6 text-slate-400 border border-dashed border-white/10 rounded-xl">
-              No workouts logged for this date.
-            </div>
-          )}
+        <div className="glass-panel p-4 flex items-center gap-4 hover:bg-white/10 transition-colors">
+          <div className="w-12 h-12 rounded-xl bg-[#8b5cf6]/20 text-[#8b5cf6] flex items-center justify-center">
+            <Trophy size={24} />
+          </div>
+          <div>
+            <p className="text-sm text-slate-400 m-0">Longest Streak</p>
+            <h3 className="text-2xl font-bold m-0">{statsData.longestStreak} Days</h3>
+          </div>
+        </div>
+        <div className="glass-panel p-4 flex items-center gap-4 hover:bg-white/10 transition-colors">
+          <div className="w-12 h-12 rounded-xl bg-[#10b981]/20 text-[#10b981] flex items-center justify-center">
+            <CalendarIcon size={24} />
+          </div>
+          <div>
+            <p className="text-sm text-slate-400 m-0">Total Done</p>
+            <h3 className="text-2xl font-bold m-0">{statsData.totalDone}</h3>
+          </div>
         </div>
       </div>
 
+      {/* Daily Pie Chart */}
+      <div className="glass-panel p-6 mb-8 flex flex-col items-center justify-center relative">
+        <h3 className="text-lg font-semibold mb-6 w-full border-b border-white/10 pb-3 flex items-center gap-2 justify-center">
+          <Dumbbell size={18} className="text-accent" />
+          Daily Completion Rate
+        </h3>
+        <div className="relative w-40 h-40 rounded-full border-4 border-white/5 flex items-center justify-center shadow-lg">
+          <div 
+            className="absolute inset-0 rounded-full"
+            style={{
+              background: `conic-gradient(#6366f1 0% ${dailyPct}%, rgba(255,255,255,0.05) ${dailyPct}% 100%)`,
+              opacity: 0.9
+            }}
+          />
+          <div className="absolute inset-2 rounded-full bg-[#0f172a] flex items-center justify-center z-10 shadow-inner">
+            <span className="text-2xl font-bold">{dailyPct}%</span>
+          </div>
+        </div>
+        <p className="text-slate-400 mt-4">{dailyCompleted} of {dailyTotal} exercises completed</p>
+      </div>
+
+      {/* Daily 3-Column Tracker Grid */}
+      <div className="glass-panel p-6">
+        {loading ? (
+          <div className="text-center p-8 text-accent">Loading exercises...</div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {/* Header Row */}
+            <div className="grid grid-cols-[1fr_80px_80px] gap-4 pb-2 border-b border-white/10 text-slate-400 font-semibold px-4">
+              <div>Exercise</div>
+              <div className="text-center">Done</div>
+              <div className="text-center">Not Done</div>
+            </div>
+            
+            {/* Rows */}
+            {fitnessData.map((fitness) => {
+              const isDone = fitness.tracking && fitness.tracking[selectedDateKey] === true;
+              const isNotDone = fitness.tracking && fitness.tracking[selectedDateKey] === false;
+
+              return (
+                <div key={fitness._id} className="grid grid-cols-[1fr_80px_80px] gap-4 items-center bg-white/5 hover:bg-white/10 transition-colors p-4 rounded-xl border border-transparent hover:border-white/10 group">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex flex-col">
+                      <span className={`font-semibold ${isDone ? 'line-through text-slate-400' : 'text-white'}`}>{fitness.title}</span>
+                      {fitness.description && <span className="text-xs text-slate-400">{fitness.description}</span>}
+                    </div>
+                    <div className="flex gap-2 shrink-0 pr-4">
+                      <button onClick={() => openEditModal(fitness)} className="text-blue-400 hover:text-blue-300 transition-colors p-1.5 hover:bg-blue-500/10 rounded-lg" title="Edit Exercise">
+                        <Pencil size={16} />
+                      </button>
+                      <button onClick={() => confirmDelete(fitness)} className="text-red-400 hover:text-red-300 transition-colors p-1.5 hover:bg-red-500/20 rounded-lg" title="Delete Exercise">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Done Column */}
+                  <div className="flex justify-center">
+                    <button 
+                      onClick={() => toggleFitnessDay(fitness, true)}
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                        isDone 
+                          ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' 
+                          : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-emerald-400'
+                      }`}
+                    >
+                      <Check size={20} />
+                    </button>
+                  </div>
+                  
+                  {/* Not Done Column */}
+                  <div className="flex justify-center">
+                    <button 
+                      onClick={() => toggleFitnessDay(fitness, false)}
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                        isNotDone 
+                          ? 'bg-red-500 text-white shadow-lg shadow-red-500/30' 
+                          : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-red-400'
+                      }`}
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+
+            {fitnessData.length === 0 && (
+              <div className="text-center p-8 text-slate-400 border border-dashed border-white/10 rounded-xl">
+                No exercises added yet. Click "Add Exercise" to get started!
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Add / Edit Fitness Modal */}
       <GlassModal 
         isOpen={isAddModalOpen} 
         onClose={() => setIsAddModalOpen(false)}
-        title={newWorkout._id ? "Edit Workout" : "Log Workout"}
-        onSave={handleAddWorkout}
-        saveText={newWorkout._id ? "Update Workout" : "Save Workout"}
+        title={modalFitness._id ? "Edit Exercise" : "Add New Exercise"}
+        onSave={handleSaveFitness}
+        saveText="Save Exercise"
+        error={formError}
       >
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
-            <label className="text-sm text-slate-400">Workout Type</label>
-            <select 
-              className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white outline-none focus:border-accent transition-colors"
-              value={workoutType}
-              onChange={(e) => setWorkoutType(e.target.value)}
-            >
-              <option className="bg-[#0f172a]" value="Walking">Walking</option>
-              <option className="bg-[#0f172a]" value="Weight Training">Weight Training</option>
-              <option className="bg-[#0f172a]" value="Bodyweight">Bodyweight</option>
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label className="text-sm text-slate-400">Duration</label>
+            <label className="text-sm text-slate-400">Exercise Name</label>
             <input 
               type="text" 
-              value={newWorkout.duration}
-              onChange={e => setNewWorkout({...newWorkout, duration: e.target.value})}
-              className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white outline-none focus:border-accent transition-colors" 
-              placeholder="e.g. 45m or 1h 30m" 
+              value={modalFitness.title}
+              onChange={(e) => setModalFitness({...modalFitness, title: e.target.value})}
+              className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-accent transition-colors" 
+              placeholder="e.g. 50 Pushups" 
             />
           </div>
-
-          {workoutType === 'Walking' && (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-2">
-                <label className="text-sm text-slate-400">Steps</label>
-                <input 
-                  type="number" 
-                  value={newWorkout.steps}
-                  onChange={e => setNewWorkout({...newWorkout, steps: e.target.value})}
-                  className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white outline-none focus:border-accent transition-colors" 
-                  placeholder="e.g. 5000" 
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <label className="text-sm text-slate-400">Calories Burned</label>
-                <input 
-                  type="number" 
-                  value={newWorkout.calories}
-                  onChange={e => setNewWorkout({...newWorkout, calories: e.target.value})}
-                  className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white outline-none focus:border-accent transition-colors" 
-                  placeholder="e.g. 320" 
-                />
-              </div>
-            </div>
-          )}
-
-          {(workoutType === 'Weight Training' || workoutType === 'Bodyweight') && (
-            <>
-              <div className="flex flex-col gap-2">
-                <label className="text-sm text-slate-400">Exercise Name</label>
-                <input 
-                  type="text" 
-                  value={newWorkout.name}
-                  onChange={e => setNewWorkout({...newWorkout, name: e.target.value})}
-                  className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white outline-none focus:border-accent transition-colors" 
-                  placeholder={workoutType === 'Weight Training' ? "e.g. Bench Press" : "e.g. Pushups"} 
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm text-slate-400">Sets</label>
-                  <input 
-                    type="number" 
-                    value={newWorkout.sets}
-                    onChange={e => setNewWorkout({...newWorkout, sets: e.target.value})}
-                    className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white outline-none focus:border-accent transition-colors" 
-                    placeholder="e.g. 3" 
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm text-slate-400">Reps</label>
-                  <input 
-                    type="number" 
-                    value={newWorkout.reps}
-                    onChange={e => setNewWorkout({...newWorkout, reps: e.target.value})}
-                    className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white outline-none focus:border-accent transition-colors" 
-                    placeholder="e.g. 12" 
-                  />
-                </div>
-              </div>
-            </>
-          )}
+          
+          <div className="flex flex-col gap-2">
+            <label className="text-sm text-slate-400">Description (Optional)</label>
+            <textarea 
+              value={modalFitness.description}
+              onChange={(e) => setModalFitness({...modalFitness, description: e.target.value})}
+              className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-accent transition-colors min-h-[100px]" 
+              placeholder="Add details or motivation for this exercise..."
+            ></textarea>
+          </div>
         </div>
       </GlassModal>
 
+      {/* Delete Confirmation Modal */}
       <GlassModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         title="Confirm Deletion"
-        onSave={executeDeleteWorkout}
-        saveText="Yes, Delete Workout"
+        onSave={executeDelete}
+        saveText="Yes, Delete"
       >
         <div className="p-4">
-          <p className="text-slate-300">Are you sure you want to delete <strong>"{workoutToDelete?.name}"</strong>?</p>
-          <p className="text-red-400 mt-2 text-sm">This action cannot be undone.</p>
+          <p className="text-slate-300">Are you sure you want to delete the exercise <strong>"{fitnessToDelete?.title}"</strong>?</p>
+          <p className="text-red-400 mt-2 text-sm">This action cannot be undone and will erase all tracking history for this exercise.</p>
         </div>
       </GlassModal>
+
     </ModuleLayout>
   );
 };

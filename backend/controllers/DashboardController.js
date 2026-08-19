@@ -29,9 +29,18 @@ exports.getDashboardStats = async (req, res) => {
     const activeGoals = goals.filter(g => g.status !== 'Completed').length;
     const activeProjects = projects.filter(p => p.status !== 'Completed').length;
     
-    // Mocking fitness progress based on logs
-    const fitnessProgress = fitnessLogs.length > 0 ? 
-      Math.min(100, Math.round((fitnessLogs.length / 30) * 100)) + '%' : '0%';
+    // Calculate fitness progress (overall completion)
+    let allTimeFitnessCompleted = 0;
+    let allTimeFitnessEntries = 0;
+    fitnessLogs.forEach(f => {
+      if (f.tracking) {
+        for (const val of f.tracking.values()) {
+          allTimeFitnessEntries++;
+          if (val === true) allTimeFitnessCompleted++;
+        }
+      }
+    });
+    const fitnessProgress = (allTimeFitnessEntries > 0 ? Math.round((allTimeFitnessCompleted / allTimeFitnessEntries) * 100) : 0) + '%';
       
     // Calculate balance
     let balance = 0;
@@ -98,14 +107,19 @@ exports.getDashboardStats = async (req, res) => {
     ];
 
     // Fitness
-    const walkCount = fitnessLogs.filter(l => l.type === 'Walking').length;
-    const weightCount = fitnessLogs.filter(l => l.type === 'Weight Training').length;
-    const bodyCount = fitnessLogs.filter(l => l.type === 'Bodyweight').length;
+    let fitnessCompletedToday = 0;
+    let fitnessNotCompletedToday = 0;
+    fitnessLogs.forEach(f => {
+      if (f.tracking && f.tracking.get(todayStr) === true) {
+        fitnessCompletedToday++;
+      } else {
+        fitnessNotCompletedToday++;
+      }
+    });
     const fitnessTotal = fitnessLogs.length;
     const fitnessSegments = [
-      { label: 'Walking', value: walkCount, color: '#f59e0b' },
-      { label: 'Weight Training', value: weightCount, color: '#3b82f6' },
-      { label: 'Bodyweight', value: bodyCount, color: '#ec4899' }
+      { label: 'Done', value: fitnessCompletedToday, color: '#f59e0b' },
+      { label: 'Not Done', value: fitnessNotCompletedToday, color: '#d97706' }
     ];
 
     // Budget
