@@ -297,7 +297,7 @@ const MyFitness = () => {
                 <div key={fitness._id} className="grid grid-cols-[1fr_80px_80px] gap-4 items-center bg-white/5 hover:bg-white/10 transition-colors p-4 rounded-xl border border-transparent hover:border-white/10 group">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex flex-col">
-                      <span className={`font-semibold ${isDone ? 'line-through text-slate-400' : 'text-white'}`}>{fitness.title}</span>
+                      <span className={`font-semibold ${isDone ? 'line-through text-slate-400' : 'text-white'}`}>{fitness.title || fitness.name || fitness.type}</span>
                       {fitness.description && <span className="text-xs text-slate-400">{fitness.description}</span>}
                     </div>
                     <div className="flex gap-2 shrink-0 pr-4">
