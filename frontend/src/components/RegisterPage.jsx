@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { 
   User, 
   Mail, 
@@ -15,6 +16,7 @@ import {
 import './Auth.css';
 
 export default function RegisterPage({ onNavigate }) {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -27,6 +29,13 @@ export default function RegisterPage({ onNavigate }) {
   const [isLoading, setIsLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
+  const handleNavigate = (path) => {
+    if (onNavigate) {
+      onNavigate(path);
+    }
+    navigate(path);
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -55,8 +64,11 @@ export default function RegisterPage({ onNavigate }) {
 
     setTimeout(() => {
       setIsLoading(false);
-      setSuccessMsg('Account provisioned! Redirecting to workspace setup...');
-    }, 900);
+      setSuccessMsg('Account provisioned! Opening workspace...');
+      setTimeout(() => {
+        handleNavigate('/dashboard');
+      }, 500);
+    }, 700);
   };
 
   return (
@@ -67,35 +79,39 @@ export default function RegisterPage({ onNavigate }) {
       exit={{ opacity: 0, y: -16 }}
       transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
     >
-      <div className="auth-card">
+      <div className="auth-card register-card">
         {/* Card Header */}
         <div className="auth-header">
           <div className="auth-badge">
             <Sparkles size={13} />
-            <span>Developer Onboarding</span>
+            <span>Join TrackIt Jira</span>
           </div>
-          <h2 className="auth-title">Join TrackIt Loop</h2>
+          <h2 className="auth-title">Create Developer Account</h2>
           <p className="auth-subtitle">
-            Create your engineering profile to start tracking issues, sprints, and code commits.
+            Get started with unified agile planning, sprint backlog tracking, and team workspaces.
           </p>
         </div>
 
         {/* Registration Form */}
         <form className="auth-form" onSubmit={handleSubmit}>
+          {errorMsg && (
+            <div className="auth-error-banner">
+              <span>{errorMsg}</span>
+            </div>
+          )}
+
           <div className="form-group">
             <label className="form-label">Full Name</label>
             <div className="input-wrapper">
-              <span className="input-icon-left">
-                <User size={17} />
-              </span>
-              <input
+              <User className="input-icon" size={17} />
+              <input 
                 type="text"
                 name="fullName"
-                required
                 className="auth-input"
-                placeholder="e.g. Alex Turing"
+                placeholder="Alex Chen"
                 value={formData.fullName}
                 onChange={handleChange}
+                required
               />
             </div>
           </div>
@@ -103,113 +119,100 @@ export default function RegisterPage({ onNavigate }) {
           <div className="form-group">
             <label className="form-label">Work Email</label>
             <div className="input-wrapper">
-              <span className="input-icon-left">
-                <Mail size={17} />
-              </span>
-              <input
+              <Mail className="input-icon" size={17} />
+              <input 
                 type="email"
                 name="email"
-                required
                 className="auth-input"
-                placeholder="alex@company.dev"
+                placeholder="alex.chen@workspace.io"
                 value={formData.email}
                 onChange={handleChange}
+                required
               />
             </div>
           </div>
 
           <div className="form-group">
-            <label className="form-label">Primary Role</label>
+            <label className="form-label">Engineering Role / Focus</label>
             <div className="input-wrapper">
-              <span className="input-icon-left">
-                <Code2 size={17} />
-              </span>
-              <select
+              <Code2 className="input-icon" size={17} />
+              <select 
                 name="role"
-                className="auth-select"
+                className="auth-input auth-select"
                 value={formData.role}
                 onChange={handleChange}
               >
                 <option value="Full Stack Engineer">Full Stack Engineer</option>
                 <option value="Frontend Developer">Frontend Developer</option>
                 <option value="Backend Developer">Backend Developer</option>
-                <option value="DevOps / SRE Engineer">DevOps / SRE Engineer</option>
-                <option value="QA / Test Automation">QA / Test Automation</option>
-                <option value="Engineering Lead / PM">Engineering Lead / PM</option>
+                <option value="DevOps / Cloud Architect">DevOps / Cloud Architect</option>
+                <option value="Engineering Lead">Engineering Lead</option>
+                <option value="Product Designer">Product Designer</option>
               </select>
             </div>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Password</label>
-            <div className="input-wrapper">
-              <span className="input-icon-left">
-                <Lock size={17} />
-              </span>
-              <input
-                type={showPassword ? 'text' : 'password'}
-                name="password"
-                required
-                minLength={6}
-                className="auth-input"
-                placeholder="Create a strong password"
-                value={formData.password}
-                onChange={handleChange}
-              />
-              <button
-                type="button"
-                className="input-toggle-right"
-                onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-              >
-                {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-              </button>
+          <div className="form-row-2col">
+            <div className="form-group">
+              <label className="form-label">Password</label>
+              <div className="input-wrapper">
+                <Lock className="input-icon" size={17} />
+                <input 
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  className="auth-input"
+                  placeholder="Min 8 chars"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  minLength={6}
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="form-group">
-            <label className="form-label">Confirm Password</label>
-            <div className="input-wrapper">
-              <span className="input-icon-left">
-                <Lock size={17} />
-              </span>
-              <input
-                type={showPassword ? 'text' : 'password'}
-                name="confirmPassword"
-                required
-                minLength={6}
-                className="auth-input"
-                placeholder="Repeat your password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-              />
+            <div className="form-group">
+              <label className="form-label">Confirm Password</label>
+              <div className="input-wrapper">
+                <Lock className="input-icon" size={17} />
+                <input 
+                  type={showPassword ? 'text' : 'password'}
+                  name="confirmPassword"
+                  className="auth-input"
+                  placeholder="Re-type password"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  required
+                />
+                <button 
+                  type="button" 
+                  className="password-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label="Toggle password visibility"
+                >
+                  {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                </button>
+              </div>
             </div>
           </div>
 
           <div className="form-options-row">
-            <label className="terms-label">
+            <label className="remember-label">
               <input
                 type="checkbox"
                 name="agreeTerms"
                 checked={formData.agreeTerms}
                 onChange={handleChange}
               />
-              <span>I agree to Developer Workspace Code & Terms</span>
+              <span>I agree to Developer Terms of Service and Privacy Policy</span>
             </label>
           </div>
-
-          {errorMsg && (
-            <div style={{ color: '#dc2626', fontSize: '0.82rem', fontWeight: 600 }}>
-              {errorMsg}
-            </div>
-          )}
 
           <button 
             type="submit" 
             className="btn-auth-submit"
             disabled={isLoading}
           >
-            <span>{isLoading ? 'Creating account...' : 'Create Developer Account'}</span>
+            <span>{isLoading ? 'Creating Account...' : 'Create Developer Workspace'}</span>
             {!isLoading && <ArrowRight size={17} />}
           </button>
 
@@ -223,13 +226,13 @@ export default function RegisterPage({ onNavigate }) {
 
         {/* Footer Navigation */}
         <div className="auth-footer">
-          <span>Already have a developer account? </span>
+          <span>Already have an account? </span>
           <button 
             type="button" 
             className="auth-switch-link"
-            onClick={() => onNavigate('login')}
+            onClick={() => handleNavigate('/login')}
           >
-            Sign in
+            Sign in now
           </button>
         </div>
       </div>
@@ -238,10 +241,10 @@ export default function RegisterPage({ onNavigate }) {
       <button 
         type="button" 
         className="btn-back-home"
-        onClick={() => onNavigate('home')}
+        onClick={() => handleNavigate('/')}
       >
         <ArrowLeft size={16} />
-        <span>Return to TrackIt Loop Home</span>
+        <span>Return to TrackIt Jira Home</span>
       </button>
     </motion.div>
   );

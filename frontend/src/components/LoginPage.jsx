@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { 
   Mail, 
   Lock, 
@@ -13,12 +14,20 @@ import {
 import './Auth.css';
 
 export default function LoginPage({ onNavigate }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('alex.chen@workspace.io');
+  const [password, setPassword] = useState('password123');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+
+  const handleNavigate = (path) => {
+    if (onNavigate) {
+      onNavigate(path);
+    }
+    navigate(path);
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -28,8 +37,11 @@ export default function LoginPage({ onNavigate }) {
     // Simulated auth demo response
     setTimeout(() => {
       setIsLoading(false);
-      setSuccessMsg('Authentication successful! Connecting to IT developer workspace...');
-    }, 800);
+      setSuccessMsg('Authentication successful! Opening workspace...');
+      setTimeout(() => {
+        handleNavigate('/dashboard');
+      }, 500);
+    }, 600);
   };
 
   return (
@@ -49,7 +61,7 @@ export default function LoginPage({ onNavigate }) {
           </div>
           <h2 className="auth-title">Welcome Back</h2>
           <p className="auth-subtitle">
-            Sign in to access your sprint boards, tasks, and development logs.
+            Sign in to access your sprint boards, backlog issues, and release roadmaps.
           </p>
         </div>
 
@@ -58,44 +70,40 @@ export default function LoginPage({ onNavigate }) {
           <div className="form-group">
             <label className="form-label">Work Email</label>
             <div className="input-wrapper">
-              <span className="input-icon-left">
-                <Mail size={17} />
-              </span>
-              <input
+              <Mail className="input-icon" size={17} />
+              <input 
                 type="email"
-                required
                 className="auth-input"
-                placeholder="developer@company.com"
+                placeholder="name@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                required
               />
             </div>
           </div>
 
           <div className="form-group">
-            <div className="form-label">
-              <span>Password</span>
-              <a href="#forgot" className="forgot-link" onClick={(e) => { e.preventDefault(); alert('Password reset link sent to registered email.'); }}>
+            <div className="label-row">
+              <label className="form-label">Password</label>
+              <a href="#forgot" className="forgot-link" onClick={(e) => e.preventDefault()}>
                 Forgot?
               </a>
             </div>
             <div className="input-wrapper">
-              <span className="input-icon-left">
-                <Lock size={17} />
-              </span>
-              <input
+              <Lock className="input-icon" size={17} />
+              <input 
                 type={showPassword ? 'text' : 'password'}
-                required
                 className="auth-input"
-                placeholder="Enter your password"
+                placeholder="••••••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                required
               />
-              <button
-                type="button"
-                className="input-toggle-right"
+              <button 
+                type="button" 
+                className="password-toggle"
                 onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-label="Toggle password visibility"
               >
                 {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
               </button>
@@ -136,7 +144,7 @@ export default function LoginPage({ onNavigate }) {
           <button 
             type="button" 
             className="auth-switch-link"
-            onClick={() => onNavigate('register')}
+            onClick={() => handleNavigate('/register')}
           >
             Create one now
           </button>
@@ -147,10 +155,10 @@ export default function LoginPage({ onNavigate }) {
       <button 
         type="button" 
         className="btn-back-home"
-        onClick={() => onNavigate('home')}
+        onClick={() => handleNavigate('/')}
       >
         <ArrowLeft size={16} />
-        <span>Return to TrackIt Loop Home</span>
+        <span>Return to TrackIt Jira Home</span>
       </button>
     </motion.div>
   );
