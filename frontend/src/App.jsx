@@ -1,12 +1,17 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Kanban, 
   FileText, 
   Clock, 
-  Users 
+  Users,
+  LogIn,
+  UserPlus
 } from 'lucide-react';
+import LoginPage from './components/LoginPage';
+import RegisterPage from './components/RegisterPage';
 import './App.css';
+import './components/Auth.css';
 
 // Animated TrackIt Loop SVG Logo Component with Framer Motion
 export const AnimatedTrackItLoopLogo = ({ size = 104 }) => {
@@ -81,6 +86,8 @@ export const AnimatedTrackItLoopLogo = ({ size = 104 }) => {
 };
 
 export default function App() {
+  const [currentView, setCurrentView] = useState('home'); // 'home' | 'login' | 'register'
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -122,6 +129,51 @@ export default function App() {
 
   return (
     <div className="landing-viewport">
+      {/* ================= TOP NAVIGATION BAR (WITH TOP RIGHT BUTTONS) ================= */}
+      <header className="app-header">
+        <button 
+          className="brand-nav-link" 
+          onClick={() => setCurrentView('home')}
+          title="Return to TrackIt Loop Home"
+        >
+          <div className="nav-logo-icon">
+            <svg width="22" height="22" viewBox="0 0 100 100" fill="none">
+              <path
+                d="M32 50 C32 38 43 38 50 50 C57 62 68 62 68 50 C68 38 57 38 50 50 C43 62 32 62 32 50 Z"
+                stroke="#ffffff"
+                strokeWidth="11"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+          <span className="nav-brand-title">
+            TrackIt <span className="gradient-text">Loop</span>
+          </span>
+        </button>
+
+        {/* Top Right Corner Buttons */}
+        <div className="nav-auth-buttons">
+          <button 
+            type="button"
+            className={`btn-nav-login ${currentView === 'login' ? 'active' : ''}`}
+            onClick={() => setCurrentView('login')}
+          >
+            <LogIn size={16} />
+            <span>Sign In</span>
+          </button>
+          
+          <button 
+            type="button"
+            className={`btn-nav-register ${currentView === 'register' ? 'active' : ''}`}
+            onClick={() => setCurrentView('register')}
+          >
+            <UserPlus size={16} />
+            <span>Register</span>
+          </button>
+        </div>
+      </header>
+
       {/* ================= ONLY BLUE & PURPLE BLOBS ON SIDES, WHITE BACKGROUND ================= */}
       <div className="blob-canvas" aria-hidden="true">
         {/* LEFT SIDE: BLUE BLOBS */}
@@ -152,71 +204,86 @@ export default function App() {
       {/* Subtle Engineering Grid Overlay */}
       <div className="pattern-grid" aria-hidden="true" />
 
-      {/* ================= BOOTSTRAP MAIN CONTENT CONTAINER ================= */}
-      <div className="container position-relative z-2">
-        <div className="row justify-content-center">
-          <div className="col-12 col-lg-10 col-xl-9 d-flex flex-column align-items-center text-center py-5">
-            
-            <motion.div
-              className="content-wrapper w-100"
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-            >
-              {/* Ecosystem Badge */}
-              <motion.div variants={itemVariants}>
-                <div className="ecosystem-badge">
-                  <span className="live-pulse" />
-                  <span>Creative Hub Ecosystem</span>
-                </div>
-              </motion.div>
+      {/* ================= VIEW ROUTING ================= */}
+      <AnimatePresence mode="wait">
+        {currentView === 'home' && (
+          <motion.div 
+            key="home-view"
+            className="container position-relative z-2 home-landing-container"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="row justify-content-center w-100">
+              <div className="col-12 col-lg-10 col-xl-9 d-flex flex-column align-items-center text-center py-5">
+                
+                <motion.div
+                  className="content-wrapper w-100"
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                >
+                  {/* Ecosystem Badge */}
+                  <motion.div variants={itemVariants}>
+                    <div className="ecosystem-badge">
+                      <span className="live-pulse" />
+                      <span>Creative Hub Ecosystem</span>
+                    </div>
+                  </motion.div>
 
-              {/* Animated Title Logo */}
-              <motion.div variants={itemVariants}>
-                <AnimatedTrackItLoopLogo size={106} />
-              </motion.div>
+                  {/* Animated Title Logo */}
+                  <motion.div variants={itemVariants}>
+                    <AnimatedTrackItLoopLogo size={106} />
+                  </motion.div>
 
-              {/* Brand Title */}
-              <motion.h1 className="brand-title" variants={itemVariants}>
-                TrackIt <span className="gradient-brand">Loop</span>
-              </motion.h1>
+                  {/* Brand Title */}
+                  <motion.h1 className="brand-title" variants={itemVariants}>
+                    TrackIt <span className="gradient-brand">Loop</span>
+                  </motion.h1>
 
-              {/* Tagline */}
-              <motion.p className="brand-tagline" variants={itemVariants}>
-                Where ideas loop into delivery. A flagship <strong>Creative Hub</strong> workspace designed for{' '}
-                <strong>fluid ideation</strong>, <strong>team brainstorming discussions</strong>, and{' '}
-                <strong>structured agile project execution</strong>.
-              </motion.p>
+                  {/* Tagline */}
+                  <motion.p className="brand-tagline" variants={itemVariants}>
+                    Where ideas loop into delivery. A flagship <strong>Creative Hub</strong> workspace designed for{' '}
+                    <strong>fluid ideation</strong>, <strong>team brainstorming discussions</strong>, and{' '}
+                    <strong>structured agile project execution</strong>.
+                  </motion.p>
 
-              {/* Feature Chips */}
-              <motion.div className="hybrid-chips-row" variants={itemVariants}>
-                <div className="hybrid-chip">
-                  <FileText size={16} color="#2563eb" />
-                  <span>Ideation Canvases</span>
-                </div>
-                <div className="hybrid-chip">
-                  <Kanban size={16} color="#7c3aed" />
-                  <span>Agile Boards & Sprints</span>
-                </div>
-                <div className="hybrid-chip">
-                  <Clock size={16} color="#2563eb" />
-                  <span>Time Tracking</span>
-                </div>
-                <div className="hybrid-chip">
-                  <Users size={16} color="#7c3aed" />
-                  <span>Team Discussions</span>
-                </div>
-              </motion.div>
+                  {/* Feature Chips */}
+                  <motion.div className="hybrid-chips-row" variants={itemVariants}>
+                    <div className="hybrid-chip">
+                      <FileText size={16} color="#2563eb" />
+                      <span>Ideation Canvases</span>
+                    </div>
+                    <div className="hybrid-chip">
+                      <Kanban size={16} color="#7c3aed" />
+                      <span>Agile Boards & Sprints</span>
+                    </div>
+                    <div className="hybrid-chip">
+                      <Clock size={16} color="#2563eb" />
+                      <span>Time Tracking</span>
+                    </div>
+                    <div className="hybrid-chip">
+                      <Users size={16} color="#7c3aed" />
+                      <span>Team Discussions</span>
+                    </div>
+                  </motion.div>
 
+                </motion.div>
 
+              </div>
+            </div>
+          </motion.div>
+        )}
 
+        {currentView === 'login' && (
+          <LoginPage key="login-view" onNavigate={setCurrentView} />
+        )}
 
-
-            </motion.div>
-
-          </div>
-        </div>
-      </div>
+        {currentView === 'register' && (
+          <RegisterPage key="register-view" onNavigate={setCurrentView} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

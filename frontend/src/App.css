@@ -13,15 +13,12 @@
 .landing-viewport {
   position: relative;
   min-height: 100vh;
-  width: 100vw;
-  overflow: hidden;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  width: 100%;
   background-color: #ffffff;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
 }
 
@@ -215,4 +212,13 @@
   border-color: #93c5fd;
   box-shadow: 0 8px 18px rgba(37, 99, 235, 0.1);
   color: #2563eb;
+}
+
+.home-landing-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 75px);
+  width: 100%;
 }
