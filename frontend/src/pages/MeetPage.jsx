@@ -608,7 +608,7 @@ export default function MeetPage() {
                       <FileText size={13} color="#2563eb" />
                       <span>Summary</span>
                     </button>
-                  ) : (
+                  ) : meeting.category === 'ongoing' ? (
                     <button
                       type="button"
                       className="page-action-btn-primary"
@@ -616,7 +616,16 @@ export default function MeetPage() {
                       onClick={() => setActiveCallModal(meeting)}
                     >
                       <Video size={13} />
-                      <span>{meeting.category === 'ongoing' ? 'Join Call' : 'Start Call'}</span>
+                      <span>Join Call</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="jira-fast-create-btn"
+                      onClick={() => setViewNotesMeeting(meeting)}
+                    >
+                      <FileText size={13} color="#64748b" />
+                      <span>Details</span>
                     </button>
                   )}
                 </div>
@@ -730,7 +739,7 @@ export default function MeetPage() {
                           <FileText size={12} color="#2563eb" />
                           <span>Notes</span>
                         </button>
-                      ) : (
+                      ) : meeting.category === 'ongoing' ? (
                         <button
                           type="button"
                           className="page-action-btn-primary"
@@ -738,7 +747,16 @@ export default function MeetPage() {
                           onClick={() => setActiveCallModal(meeting)}
                         >
                           <Video size={12} />
-                          <span>{meeting.category === 'ongoing' ? 'Join' : 'Start'}</span>
+                          <span>Join</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="jira-fast-create-btn"
+                          onClick={() => setViewNotesMeeting(meeting)}
+                        >
+                          <FileText size={12} color="#64748b" />
+                          <span>Details</span>
                         </button>
                       )}
                     </div>

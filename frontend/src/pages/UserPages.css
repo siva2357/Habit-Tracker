@@ -44,8 +44,7 @@
 }
 
 .page-action-btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
+  opacity: 0.94;
 }
 
 /* Stat Metric Cards */
@@ -72,8 +71,6 @@
 }
 
 .metric-glass-card:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
   border-color: #cbd5e1;
 }
 
@@ -514,8 +511,6 @@
 }
 
 .meet-ceremony-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
   border-color: #cbd5e1;
 }
 
