@@ -19,21 +19,30 @@ const PORT = process.env.PORT || 5000;
 
 // Connect Database
 connectDB().then(async () => {
-  // Ensure default admin user exists
+  // Ensure default admin user exists and password is verified
   try {
     const adminEmail = 'admin@gmail.com';
-    const existing = await User.findOne({ email: adminEmail });
-    if (!existing) {
-      await User.create({
-        name: 'Admin',
+    let admin = await User.findOne({ email: adminEmail });
+    if (!admin) {
+      admin = await User.create({
+        name: 'Admin User',
         email: adminEmail,
         password: '123456',
         role: 'admin'
       });
-      console.log('Default admin seeded: admin@gmail.com / 123456');
+      console.log('Default admin created in active database: admin@gmail.com / 123456');
+    } else {
+      const isMatch = await admin.matchPassword('123456');
+      if (!isMatch) {
+        admin.password = '123456';
+        await admin.save();
+        console.log('Default admin password synced to default: admin@gmail.com / 123456');
+      } else {
+        console.log('Default admin verified: admin@gmail.com (Authentication ready)');
+      }
     }
   } catch (err) {
-    console.error('Auto-seed check error:', err.message);
+    console.error('Admin verification error on startup:', err.message);
   }
 });
 
