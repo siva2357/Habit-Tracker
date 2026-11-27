@@ -201,15 +201,15 @@ export default function ProjectCreatePage() {
             : `Created project "${payload.title}" with ${formData.steps.length} steps! 🚀`,
           'success'
         );
+        navigate('/projects');
       } else {
-        addToast(`Saved project "${payload.title}"`, 'success');
+        const errData = await res.json().catch(() => null);
+        addToast(`Failed to save project to database: ${errData?.message || res.status}`, 'error');
       }
-    } catch {
-      addToast(`Saved project "${payload.title}" (local)`, 'success');
+    } catch (err) {
+      addToast(`Database error: Unable to save project (${err.message})`, 'error');
     } finally {
       setSubmitting(false);
-      // Route back directly to My Projects page only
-      navigate('/projects');
     }
   };
 

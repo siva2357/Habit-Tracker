@@ -354,22 +354,16 @@ export default function FinancesPage() {
           setTransactions((prev) =>
             prev.map((t) => ((t._id || t.id) === targetId ? json.data : t))
           );
+          addToast(`Updated transaction: ${payload.title}`, 'success');
+          handleCloseModal();
         } else {
-          // Local fallback
-          setTransactions((prev) =>
-            prev.map((t) =>
-              (t._id || t.id) === targetId ? { ...t, ...payload } : t
-            )
-          );
+          const errData = await res.json().catch(() => null);
+          const errorMsg = errData?.message || `Server returned ${res.status} (${res.statusText || 'Error'})`;
+          addToast(`Failed to update transaction: ${errorMsg}`, 'error');
         }
-      } catch {
-        setTransactions((prev) =>
-          prev.map((t) =>
-            (t._id || t.id) === targetId ? { ...t, ...payload } : t
-          )
-        );
+      } catch (err) {
+        addToast(`Database connection error: Unable to update transaction (${err.message})`, 'error');
       }
-      addToast(`Updated transaction: ${payload.title}`, 'success');
     } else {
       // ADD MODE
       try {
@@ -381,25 +375,17 @@ export default function FinancesPage() {
         if (res.ok) {
           const json = await res.json();
           setTransactions((prev) => [json.data, ...prev]);
+          addToast(`Added transaction: ${payload.title}`, 'success');
+          handleCloseModal();
         } else {
-          // Local fallback
-          const newTx = {
-            ...payload,
-            _id: `tx-local-${Date.now()}`
-          };
-          setTransactions((prev) => [newTx, ...prev]);
+          const errData = await res.json().catch(() => null);
+          const errorMsg = errData?.message || `Server returned ${res.status} (${res.statusText || 'Error'})`;
+          addToast(`Failed to save transaction to database: ${errorMsg}`, 'error');
         }
-      } catch {
-        const newTx = {
-          ...payload,
-          _id: `tx-local-${Date.now()}`
-        };
-        setTransactions((prev) => [newTx, ...prev]);
+      } catch (err) {
+        addToast(`Database connection error: Unable to save transaction (${err.message})`, 'error');
       }
-      addToast(`Added transaction: ${payload.title}`, 'success');
     }
-
-    handleCloseModal();
   };
 
   // Delete transaction with confirmation
@@ -407,13 +393,18 @@ export default function FinancesPage() {
     if (!window.confirm(`Are you sure you want to delete "${title}"?`)) return;
 
     try {
-      await fetch(`/api/finances/${id}`, { method: 'DELETE' });
-    } catch {
-      // Silent catch for local fallback
+      const res = await fetch(`/api/finances/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setTransactions((prev) => prev.filter((t) => (t._id || t.id) !== id));
+        addToast(`Deleted "${title}"`, 'info');
+      } else {
+        const errData = await res.json().catch(() => null);
+        const errorMsg = errData?.message || `Server returned ${res.status}`;
+        addToast(`Failed to delete transaction from database: ${errorMsg}`, 'error');
+      }
+    } catch (err) {
+      addToast(`Database connection error: Unable to delete (${err.message})`, 'error');
     }
-
-    setTransactions((prev) => prev.filter((t) => (t._id || t.id) !== id));
-    addToast(`Deleted "${title}"`, 'info');
   };
 
   return (

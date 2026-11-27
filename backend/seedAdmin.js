@@ -10,89 +10,44 @@ const ADMIN_EMAIL = 'admin@gmail.com';
 const ADMIN_PASSWORD = '123456';
 const ADMIN_NAME = 'Admin User';
 
-async function ensureAdminInDB(uri, label) {
-  if (!uri) {
-    console.log(`[${label}] Skipping: No URI provided.`);
-    return;
-  }
+async function run() {
+  const uri = process.env.MONGO_URI || 'mongodb+srv://SivaPrasad:Siva%402357@cluster0.yub04.mongodb.net/TrackIt?retryWrites=true&w=majority';
 
-  console.log(`\n========================================`);
-  console.log(`[${label}] Connecting to database...`);
-  console.log(`========================================`);
-
+  console.log('Connecting to Live MongoDB Atlas for Admin verification...');
   try {
-    const conn = await mongoose.createConnection(uri, {
-      serverSelectionTimeoutMS: 10000
-    }).asPromise();
+    await mongoose.connect(uri, { serverSelectionTimeoutMS: 8000 });
+    console.log(`Connected to Live DB: ${mongoose.connection.host}/${mongoose.connection.name}`);
 
-    console.log(`[${label}] Connected: ${conn.host}/${conn.name}`);
-
-    // Register User model on this connection
-    const UserModel = conn.model('User', User.schema);
-
-    let admin = await UserModel.findOne({ email: ADMIN_EMAIL });
+    let admin = await User.findOne({ email: ADMIN_EMAIL });
 
     if (!admin) {
-      console.log(`[${label}] Default admin not found. Creating admin...`);
-      admin = await UserModel.create({
+      console.log('Admin not found in live database. Creating admin user...');
+      admin = await User.create({
         name: ADMIN_NAME,
         email: ADMIN_EMAIL,
         password: ADMIN_PASSWORD,
         role: 'admin'
       });
-      console.log(`[${label}] Default admin successfully created:`);
-      console.log(`  - ID: ${admin._id}`);
-      console.log(`  - Email: ${admin.email}`);
-      console.log(`  - Role: ${admin.role}`);
+      console.log('Default admin created successfully: admin@gmail.com / 123456');
     } else {
-      console.log(`[${label}] Default admin already exists (ID: ${admin._id}). Checking password hash...`);
+      console.log('Admin user found. Verifying password...');
       const isMatch = await admin.matchPassword(ADMIN_PASSWORD);
       if (!isMatch) {
-        console.log(`[${label}] Password does not match. Resetting password to default...`);
         admin.password = ADMIN_PASSWORD;
         await admin.save();
-        console.log(`[${label}] Password updated and re-hashed successfully.`);
+        console.log('Password reset to default 123456 and re-hashed successfully.');
       } else {
-        console.log(`[${label}] Password verified and matches default.`);
+        console.log('Admin password verified: ready for login.');
       }
     }
 
-    // Final verification check
-    const verifiedAdmin = await UserModel.findOne({ email: ADMIN_EMAIL });
-    const verifiedMatch = await verifiedAdmin.matchPassword(ADMIN_PASSWORD);
-    console.log(`[${label}] Final Login Test Status: ${verifiedMatch ? 'SUCCESS (Ready to log in)' : 'FAILED'}`);
-
-    await conn.close();
-    console.log(`[${label}] Connection closed.`);
+    await mongoose.connection.close();
+    console.log('Admin check completed. Live database is fully ready!');
+    process.exit(0);
   } catch (error) {
-    console.error(`[${label}] Error ensuring admin user:`, error.message);
+    console.error('Error during admin seeding:', error.message);
+    process.exit(1);
   }
-}
-
-async function run() {
-  const localUri = process.env.MONGO_LOCAL_URI || process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/TrackIt';
-  const prodUri = process.env.MONGO_PROD_URI;
-
-  console.log('Starting Default Admin Seeder for TrackIt...');
-  console.log(`Target Admin: ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
-
-  // 1. Ensure in Live Production Atlas DB
-  if (prodUri) {
-    await ensureAdminInDB(prodUri, 'LIVE ATLAS DATABASE');
-  } else {
-    console.log('\n[LIVE ATLAS DATABASE] No MONGO_PROD_URI defined in backend/.env');
-  }
-
-  // 2. Ensure in Local MongoDB
-  await ensureAdminInDB(localUri, 'LOCAL DATABASE');
-
-  console.log('\n========================================');
-  console.log('Default Admin Initialization Finished!');
-  console.log('Credentials:');
-  console.log(`  Email:    ${ADMIN_EMAIL}`);
-  console.log(`  Password: ${ADMIN_PASSWORD}`);
-  console.log('========================================\n');
-  process.exit(0);
 }
 
 run();
