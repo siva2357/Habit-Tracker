@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Transaction = require('../models/Transaction');
 const PlannerTask = require('../models/PlannerTask');
 const Goal = require('../models/Goal');
@@ -191,7 +192,9 @@ exports.getDashboardSummary = async (req, res) => {
     res.json({
       success: true,
       timestamp: new Date().toISOString(),
-      database: 'mongodb://127.0.0.1:27017/TrackIt',
+      database: mongoose.connection.host
+        ? `MongoDB Atlas (${mongoose.connection.host}/${mongoose.connection.name})`
+        : 'MongoDB Atlas Live (TrackIt)',
       averageProgress,
       modules,
       statCards

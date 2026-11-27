@@ -481,7 +481,7 @@ export default function DashboardPage() {
             <div className="pt-3 sm:pt-4 border-t border-slate-100 flex flex-col xs:flex-row xs:items-center justify-between gap-1 text-[11px] sm:text-xs text-slate-500">
               <span className="flex items-center gap-1.5">
                 <Database className="w-3.5 h-3.5 text-indigo-600" />
-                <span>All 6 sub-modules synced to MongoDB (127.0.0.1:27017/TrackIt)</span>
+                <span>All 6 sub-modules synced to Live MongoDB Atlas</span>
               </span>
               <span className="text-emerald-600 font-bold">100% Realtime</span>
             </div>
