@@ -104,10 +104,14 @@ export default function FinancesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Initial / Base Balance state (persisted in localStorage)
+  // Initial / Base Balance state (persisted in localStorage, defaults to 0)
   const [initialBalance, setInitialBalance] = useState(() => {
     const saved = localStorage.getItem('trackit_finance_initial_balance');
-    return saved !== null ? Number(saved) : 50000;
+    if (saved === null || saved === '50000') {
+      localStorage.setItem('trackit_finance_initial_balance', '0');
+      return 0;
+    }
+    return Number(saved);
   });
   const [isBalanceModalOpen, setIsBalanceModalOpen] = useState(false);
   const [balanceInput, setBalanceInput] = useState('');
@@ -497,8 +501,12 @@ export default function FinancesPage() {
               variant="indigo"
               details={
                 <>
-                  <span>Base: <strong className="text-slate-700">{formatINR(initialBalance)}</strong></span>
-                  <span>•</span>
+                  {initialBalance !== 0 && (
+                    <>
+                      <span>Base: <strong className="text-slate-700">{formatINR(initialBalance)}</strong></span>
+                      <span>•</span>
+                    </>
+                  )}
                   <span className="text-emerald-700 font-bold">+{formatINR(summary.totalCredit)}</span>
                   <span>•</span>
                   <span className="text-rose-700 font-bold">-{formatINR(summary.totalDebit)}</span>
@@ -1082,7 +1090,7 @@ export default function FinancesPage() {
                       autoFocus
                       value={balanceInput}
                       onChange={(e) => setBalanceInput(e.target.value)}
-                      placeholder="e.g. 50000"
+                      placeholder="e.g. 0"
                       className="w-full text-base font-bold pl-8 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none"
                     />
                   </div>
@@ -1093,22 +1101,36 @@ export default function FinancesPage() {
                   </p>
                 </div>
 
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
-                  <Button
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+                  <button
                     type="button"
-                    variant="ghost"
-                    size="md"
-                    onClick={() => setIsBalanceModalOpen(false)}
+                    onClick={() => {
+                      setInitialBalance(0);
+                      localStorage.setItem('trackit_finance_initial_balance', '0');
+                      setIsBalanceModalOpen(false);
+                      addToast('Base amount reset to ₹0', 'info');
+                    }}
+                    className="text-xs font-bold text-rose-600 hover:text-rose-800 hover:underline transition-colors cursor-pointer"
                   >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    size="md"
-                  >
-                    Save Balance
-                  </Button>
+                    Reset Base to ₹0
+                  </button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="md"
+                      onClick={() => setIsBalanceModalOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      size="md"
+                    >
+                      Save Balance
+                    </Button>
+                  </div>
                 </div>
               </form>
             </motion.div>

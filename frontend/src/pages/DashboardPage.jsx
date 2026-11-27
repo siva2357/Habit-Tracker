@@ -143,7 +143,12 @@ export default function DashboardPage() {
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
     try {
-      const storedBase = localStorage.getItem('trackit_base_balance') || '50000';
+      let storedBase = localStorage.getItem('trackit_finance_initial_balance') || localStorage.getItem('trackit_base_balance');
+      if (!storedBase || storedBase === '50000') {
+        storedBase = '0';
+        localStorage.setItem('trackit_finance_initial_balance', '0');
+        localStorage.removeItem('trackit_base_balance');
+      }
       const res = await fetch(`/api/dashboard/summary?baseBalance=${storedBase}`);
       if (res.ok) {
         const json = await res.json();
