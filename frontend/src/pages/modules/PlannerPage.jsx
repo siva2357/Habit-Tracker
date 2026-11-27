@@ -301,23 +301,25 @@ export default function PlannerPage() {
     );
 
     try {
-      await fetch(`/api/planner/${id}/toggle`, {
+      const res = await fetch(`/api/planner/${id}/toggle`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: nextStatus })
       });
-    } catch {
-      // Local fallback
+      if (res.ok) {
+        const readableStatus = {
+          pending: 'Pending',
+          in_progress: 'In Progress',
+          completed: 'Completed',
+          not_completed: 'Not Completed'
+        }[nextStatus];
+        addToast(`Task marked as ${readableStatus}`, 'info');
+      } else {
+        addToast('Failed to update task status in database', 'error');
+      }
+    } catch (err) {
+      addToast(`Database error: Unable to update task (${err.message})`, 'error');
     }
-
-    const readableStatus = {
-      pending: 'Pending',
-      in_progress: 'In Progress',
-      completed: 'Completed',
-      not_completed: 'Not Completed'
-    }[nextStatus];
-
-    addToast(`Task marked as ${readableStatus}`, 'info');
   };
 
   // Validate form
@@ -360,17 +362,16 @@ export default function PlannerPage() {
           setTasks((prev) =>
             prev.map((t) => ((t._id || t.id) === targetId ? json.data : t))
           );
+          addToast(`Updated task: ${payload.title}`, 'success');
+          handleCloseModal();
         } else {
-          setTasks((prev) =>
-            prev.map((t) => ((t._id || t.id) === targetId ? { ...t, ...payload } : t))
-          );
+          const errData = await res.json().catch(() => null);
+          const errorMsg = errData?.message || `Server returned ${res.status}`;
+          addToast(`Failed to update task in database: ${errorMsg}`, 'error');
         }
-      } catch {
-        setTasks((prev) =>
-          prev.map((t) => ((t._id || t.id) === targetId ? { ...t, ...payload } : t))
-        );
+      } catch (err) {
+        addToast(`Database error: Unable to update task (${err.message})`, 'error');
       }
-      addToast(`Updated task: ${payload.title}`, 'success');
     } else {
       // ADD MODE
       try {
@@ -382,24 +383,17 @@ export default function PlannerPage() {
         if (res.ok) {
           const json = await res.json();
           setTasks((prev) => [json.data, ...prev]);
+          addToast(`Added task: ${payload.title}`, 'success');
+          handleCloseModal();
         } else {
-          const newTask = {
-            ...payload,
-            _id: `task-local-${Date.now()}`
-          };
-          setTasks((prev) => [newTask, ...prev]);
+          const errData = await res.json().catch(() => null);
+          const errorMsg = errData?.message || `Server returned ${res.status}`;
+          addToast(`Failed to save task to database: ${errorMsg}`, 'error');
         }
-      } catch {
-        const newTask = {
-          ...payload,
-          _id: `task-local-${Date.now()}`
-        };
-        setTasks((prev) => [newTask, ...prev]);
+      } catch (err) {
+        addToast(`Database error: Unable to save task (${err.message})`, 'error');
       }
-      addToast(`Added task: ${payload.title}`, 'success');
     }
-
-    handleCloseModal();
   };
 
   // Delete task
@@ -407,13 +401,16 @@ export default function PlannerPage() {
     if (!window.confirm(`Are you sure you want to delete "${title}"?`)) return;
 
     try {
-      await fetch(`/api/planner/${id}`, { method: 'DELETE' });
-    } catch {
-      // Local fallback
+      const res = await fetch(`/api/planner/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setTasks((prev) => prev.filter((t) => (t._id || t.id) !== id));
+        addToast(`Deleted "${title}"`, 'info');
+      } else {
+        addToast('Failed to delete task from database', 'error');
+      }
+    } catch (err) {
+      addToast(`Database error: Unable to delete task (${err.message})`, 'error');
     }
-
-    setTasks((prev) => prev.filter((t) => (t._id || t.id) !== id));
-    addToast(`Deleted "${title}"`, 'info');
   };
 
   // Helper for Status Badge styling

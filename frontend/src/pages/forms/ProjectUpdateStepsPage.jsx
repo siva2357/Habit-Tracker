@@ -160,12 +160,11 @@ export default function ProjectUpdateStepsPage() {
         addToast(`Progress updated to ${liveProgress.percent}%! 🚀`, 'success');
         navigate('/projects');
       } else {
-        addToast('Progress updated', 'success');
-        navigate('/projects');
+        const errData = await res.json().catch(() => null);
+        addToast(`Failed to update progress in database: ${errData?.message || res.status}`, 'error');
       }
-    } catch {
-      addToast('Progress updated (local)', 'success');
-      navigate('/projects');
+    } catch (err) {
+      addToast(`Database error: Unable to save progress (${err.message})`, 'error');
     } finally {
       setSaving(false);
     }

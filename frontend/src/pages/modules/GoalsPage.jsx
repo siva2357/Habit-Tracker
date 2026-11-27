@@ -221,23 +221,25 @@ export default function GoalsPage() {
     );
 
     try {
-      await fetch(`/api/goals/${id}/toggle`, {
+      const res = await fetch(`/api/goals/${id}/toggle`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: nextStatus })
       });
-    } catch {
-      // Offline fallback
+      if (res.ok) {
+        const readableStatus = {
+          pending: 'Pending',
+          in_progress: 'In Progress',
+          completed: 'Completed',
+          not_completed: 'Not Completed'
+        }[nextStatus];
+        addToast(`Goal marked as ${readableStatus}`, 'info');
+      } else {
+        addToast('Failed to update goal status in database', 'error');
+      }
+    } catch (err) {
+      addToast(`Database error: Unable to update goal status (${err.message})`, 'error');
     }
-
-    const readableStatus = {
-      pending: 'Pending',
-      in_progress: 'In Progress',
-      completed: 'Completed',
-      not_completed: 'Not Completed'
-    }[nextStatus];
-
-    addToast(`Goal marked as ${readableStatus}`, 'info');
   };
 
   // Open Modal for Add
@@ -322,17 +324,16 @@ export default function GoalsPage() {
           setGoals((prev) =>
             prev.map((g) => ((g._id || g.id) === targetId ? json.data : g))
           );
+          addToast(`Updated goal: ${payload.title}`, 'success');
+          setIsModalOpen(false);
         } else {
-          setGoals((prev) =>
-            prev.map((g) => ((g._id || g.id) === targetId ? { ...g, ...payload } : g))
-          );
+          const errData = await res.json().catch(() => null);
+          const errorMsg = errData?.message || `Server returned ${res.status}`;
+          addToast(`Failed to update goal: ${errorMsg}`, 'error');
         }
-      } catch {
-        setGoals((prev) =>
-          prev.map((g) => ((g._id || g.id) === targetId ? { ...g, ...payload } : g))
-        );
+      } catch (err) {
+        addToast(`Database error: Unable to update goal (${err.message})`, 'error');
       }
-      addToast(`Updated goal: ${payload.title}`, 'success');
     } else {
       // ADD MODE
       try {
@@ -344,38 +345,33 @@ export default function GoalsPage() {
         if (res.ok) {
           const json = await res.json();
           setGoals((prev) => [json.data, ...prev]);
+          addToast(`Created goal: ${payload.title}`, 'success');
+          setIsModalOpen(false);
         } else {
-          const tempGoal = {
-            _id: `goal-${Date.now()}`,
-            ...payload,
-            createdAt: new Date().toISOString()
-          };
-          setGoals((prev) => [tempGoal, ...prev]);
+          const errData = await res.json().catch(() => null);
+          const errorMsg = errData?.message || `Server returned ${res.status}`;
+          addToast(`Failed to save goal to database: ${errorMsg}`, 'error');
         }
-      } catch {
-        const tempGoal = {
-          _id: `goal-${Date.now()}`,
-          ...payload,
-          createdAt: new Date().toISOString()
-        };
-        setGoals((prev) => [tempGoal, ...prev]);
+      } catch (err) {
+        addToast(`Database error: Unable to save goal (${err.message})`, 'error');
       }
-      addToast(`Created goal: ${payload.title}`, 'success');
     }
-
-    setIsModalOpen(false);
   };
 
   // Delete Goal Handler
   const handleDeleteGoal = async (id) => {
     try {
-      await fetch(`/api/goals/${id}`, { method: 'DELETE' });
-    } catch {
-      // Offline fallback
+      const res = await fetch(`/api/goals/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setGoals((prev) => prev.filter((g) => (g._id || g.id) !== id));
+        addToast('Goal removed from tracker', 'info');
+      } else {
+        addToast('Failed to delete goal from database', 'error');
+      }
+    } catch (err) {
+      addToast(`Database error: Unable to delete goal (${err.message})`, 'error');
     }
-    setGoals((prev) => prev.filter((g) => (g._id || g.id) !== id));
     setDeleteConfirmId(null);
-    addToast('Goal removed from tracker', 'info');
   };
 
   return (

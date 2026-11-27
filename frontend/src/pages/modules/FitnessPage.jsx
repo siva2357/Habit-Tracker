@@ -305,16 +305,19 @@ export default function FitnessPage() {
     );
 
     try {
-      await fetch(`/api/fitness/${logId}/water`, {
+      const res = await fetch(`/api/fitness/${logId}/water`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ delta })
       });
-    } catch {
-      // Offline fallback
+      if (res.ok) {
+        addToast(`Hydration logged: ${newWater} ml (+${delta}ml) 💧`, 'success');
+      } else {
+        addToast('Failed to sync hydration to database', 'error');
+      }
+    } catch (err) {
+      addToast(`Database error: Unable to log hydration (${err.message})`, 'error');
     }
-
-    addToast(`Hydration logged: ${newWater} ml (+${delta}ml) 💧`, 'success');
   };
 
   // Open Modal Add
@@ -437,13 +440,16 @@ export default function FitnessPage() {
         if (res.ok) {
           const json = await res.json();
           setLogs((prev) => prev.map((l) => ((l._id || l.id) === targetId ? json.data : l)));
+          addToast(`Updated fitness log: ${payload.workoutType}`, 'success');
+          setIsModalOpen(false);
         } else {
-          setLogs((prev) => prev.map((l) => ((l._id || l.id) === targetId ? { ...l, ...payload } : l)));
+          const errData = await res.json().catch(() => null);
+          const errorMsg = errData?.message || `Server returned ${res.status}`;
+          addToast(`Failed to update fitness log: ${errorMsg}`, 'error');
         }
-      } catch {
-        setLogs((prev) => prev.map((l) => ((l._id || l.id) === targetId ? { ...l, ...payload } : l)));
+      } catch (err) {
+        addToast(`Database error: Unable to update fitness log (${err.message})`, 'error');
       }
-      addToast(`Updated fitness log: ${payload.workoutType}`, 'success');
     } else {
       try {
         const res = await fetch('/api/fitness', {
@@ -454,30 +460,33 @@ export default function FitnessPage() {
         if (res.ok) {
           const json = await res.json();
           setLogs((prev) => [json.data, ...prev]);
+          addToast(`Logged workout: ${payload.workoutType} 🏋️`, 'success');
+          setIsModalOpen(false);
         } else {
-          const temp = { _id: `fitness-${Date.now()}`, ...payload };
-          setLogs((prev) => [temp, ...prev]);
+          const errData = await res.json().catch(() => null);
+          const errorMsg = errData?.message || `Server returned ${res.status}`;
+          addToast(`Failed to save workout to database: ${errorMsg}`, 'error');
         }
-      } catch {
-        const temp = { _id: `fitness-${Date.now()}`, ...payload };
-        setLogs((prev) => [temp, ...prev]);
+      } catch (err) {
+        addToast(`Database error: Unable to save workout (${err.message})`, 'error');
       }
-      addToast(`Logged workout: ${payload.workoutType} 🏋️`, 'success');
     }
-
-    setIsModalOpen(false);
   };
 
   // Delete Log
   const handleDeleteLog = async (id) => {
     try {
-      await fetch(`/api/fitness/${id}`, { method: 'DELETE' });
-    } catch {
-      // Offline fallback
+      const res = await fetch(`/api/fitness/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setLogs((prev) => prev.filter((l) => (l._id || l.id) !== id));
+        addToast('Fitness record removed', 'info');
+      } else {
+        addToast('Failed to delete fitness record from database', 'error');
+      }
+    } catch (err) {
+      addToast(`Database error: Unable to delete (${err.message})`, 'error');
     }
-    setLogs((prev) => prev.filter((l) => (l._id || l.id) !== id));
     setDeleteConfirmId(null);
-    addToast('Fitness record removed', 'info');
   };
 
   return (

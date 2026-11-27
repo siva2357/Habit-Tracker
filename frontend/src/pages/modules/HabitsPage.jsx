@@ -272,21 +272,24 @@ export default function HabitsPage() {
     );
 
     try {
-      await fetch(`/api/habits/${habitId}/toggle`, {
+      const res = await fetch(`/api/habits/${habitId}/toggle`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ date: selectedDate })
       });
-    } catch {
-      // Offline fallback
+      if (res.ok) {
+        addToast(
+          nextDone
+            ? `"${habit.title}" completed for whole day! ✓`
+            : `"${habit.title}" marked pending`,
+          nextDone ? 'success' : 'info'
+        );
+      } else {
+        addToast(`Failed to update habit status in database`, 'error');
+      }
+    } catch (err) {
+      addToast(`Database error: Unable to update habit (${err.message})`, 'error');
     }
-
-    addToast(
-      nextDone
-        ? `"${habit.title}" completed for whole day! ✓`
-        : `"${habit.title}" marked pending`,
-      nextDone ? 'success' : 'info'
-    );
   };
 
   // Open Add Modal
@@ -343,13 +346,16 @@ export default function HabitsPage() {
         if (res.ok) {
           const json = await res.json();
           setHabits((prev) => prev.map((h) => ((h._id || h.id) === targetId ? json.data : h)));
+          addToast(`Updated habit: ${payload.title}`, 'success');
+          setIsModalOpen(false);
         } else {
-          setHabits((prev) => prev.map((h) => ((h._id || h.id) === targetId ? { ...h, ...payload } : h)));
+          const errData = await res.json().catch(() => null);
+          const errorMsg = errData?.message || `Server returned ${res.status}`;
+          addToast(`Failed to update habit in database: ${errorMsg}`, 'error');
         }
-      } catch {
-        setHabits((prev) => prev.map((h) => ((h._id || h.id) === targetId ? { ...h, ...payload } : h)));
+      } catch (err) {
+        addToast(`Database error: Unable to update habit (${err.message})`, 'error');
       }
-      addToast(`Updated habit: ${payload.title}`, 'success');
     } else {
       try {
         const res = await fetch('/api/habits', {
@@ -360,41 +366,33 @@ export default function HabitsPage() {
         if (res.ok) {
           const json = await res.json();
           setHabits((prev) => [json.data, ...prev]);
+          addToast(`Created habit: ${payload.title}`, 'success');
+          setIsModalOpen(false);
         } else {
-          const temp = {
-            _id: `habit-${Date.now()}`,
-            ...payload,
-            completedToday: false,
-            completedDates: []
-          };
-          setHabits((prev) => [temp, ...prev]);
+          const errData = await res.json().catch(() => null);
+          const errorMsg = errData?.message || `Server returned ${res.status}`;
+          addToast(`Failed to save habit to database: ${errorMsg}`, 'error');
         }
-      } catch {
-        const temp = {
-          _id: `habit-${Date.now()}`,
-          ...payload,
-          completedToday: false,
-          completedDates: [],
-          bestStreak: payload.streak
-        };
-        setHabits((prev) => [temp, ...prev]);
+      } catch (err) {
+        addToast(`Database error: Unable to save habit (${err.message})`, 'error');
       }
-      addToast(`Created habit: ${payload.title}`, 'success');
     }
-
-    setIsModalOpen(false);
   };
 
   // Delete Habit
   const handleDeleteHabit = async (id) => {
     try {
-      await fetch(`/api/habits/${id}`, { method: 'DELETE' });
-    } catch {
-      // Offline fallback
+      const res = await fetch(`/api/habits/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setHabits((prev) => prev.filter((h) => (h._id || h.id) !== id));
+        addToast('Habit removed', 'info');
+      } else {
+        addToast('Failed to delete habit from database', 'error');
+      }
+    } catch (err) {
+      addToast(`Database error: Unable to delete habit (${err.message})`, 'error');
     }
-    setHabits((prev) => prev.filter((h) => (h._id || h.id) !== id));
     setDeleteConfirmId(null);
-    addToast('Habit removed', 'info');
   };
 
   return (

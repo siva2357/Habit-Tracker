@@ -404,13 +404,16 @@ export default function ProjectsPage() {
         if (res.ok) {
           const json = await res.json();
           setProjects((prev) => prev.map((p) => ((p._id || p.id) === targetId ? json.data : p)));
+          addToast(`Updated project: ${payload.title}`, 'success');
+          setIsModalOpen(false);
         } else {
-          setProjects((prev) => prev.map((p) => ((p._id || p.id) === targetId ? { ...p, ...payload } : p)));
+          const errData = await res.json().catch(() => null);
+          const errorMsg = errData?.message || `Server returned ${res.status}`;
+          addToast(`Failed to update project: ${errorMsg}`, 'error');
         }
-      } catch {
-        setProjects((prev) => prev.map((p) => ((p._id || p.id) === targetId ? { ...p, ...payload } : p)));
+      } catch (err) {
+        addToast(`Database error: Unable to update project (${err.message})`, 'error');
       }
-      addToast(`Updated project: ${payload.title}`, 'success');
     } else {
       try {
         const res = await fetch('/api/projects', {
@@ -421,18 +424,17 @@ export default function ProjectsPage() {
         if (res.ok) {
           const json = await res.json();
           setProjects((prev) => [json.data, ...prev]);
+          addToast(`Created project: ${payload.title}`, 'success');
+          setIsModalOpen(false);
         } else {
-          const temp = { _id: `proj-${Date.now()}`, ...payload };
-          setProjects((prev) => [temp, ...prev]);
+          const errData = await res.json().catch(() => null);
+          const errorMsg = errData?.message || `Server returned ${res.status}`;
+          addToast(`Failed to save project to database: ${errorMsg}`, 'error');
         }
-      } catch {
-        const temp = { _id: `proj-${Date.now()}`, ...payload };
-        setProjects((prev) => [temp, ...prev]);
+      } catch (err) {
+        addToast(`Database error: Unable to save project (${err.message})`, 'error');
       }
-      addToast(`Created project: ${payload.title}`, 'success');
     }
-
-    setIsModalOpen(false);
   };
 
   // =========================================================
@@ -510,29 +512,36 @@ export default function ProjectsPage() {
     );
 
     try {
-      await fetch(`/api/projects/${targetId}`, {
+      const res = await fetch(`/api/projects/${targetId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-    } catch {
-      // Offline fallback
+      if (res.ok) {
+        addToast(`Step updates submitted for "${submittingProject.title}"! 🚀`, 'success');
+        setIsSubmissionModalOpen(false);
+      } else {
+        addToast('Failed to save step updates to database', 'error');
+      }
+    } catch (err) {
+      addToast(`Database error: Unable to update steps (${err.message})`, 'error');
     }
-
-    addToast(`Step updates submitted for "${submittingProject.title}"! 🚀`, 'success');
-    setIsSubmissionModalOpen(false);
   };
 
   // Delete Project
   const handleDeleteProject = async (id) => {
     try {
-      await fetch(`/api/projects/${id}`, { method: 'DELETE' });
-    } catch {
-      // Offline fallback
+      const res = await fetch(`/api/projects/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setProjects((prev) => prev.filter((p) => (p._id || p.id) !== id));
+        addToast('Project removed from tracker', 'info');
+      } else {
+        addToast('Failed to delete project from database', 'error');
+      }
+    } catch (err) {
+      addToast(`Database error: Unable to delete project (${err.message})`, 'error');
     }
-    setProjects((prev) => prev.filter((p) => (p._id || p.id) !== id));
     setDeleteConfirmId(null);
-    addToast('Project removed from tracker', 'info');
   };
 
   return (
