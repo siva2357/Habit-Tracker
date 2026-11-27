@@ -502,7 +502,7 @@ export default function DashboardPage() {
                 <span>Life Management Modules Overview</span>
               </h3>
               <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
-                Detailed table of current progress, metrics, and quick navigation actions
+                Detailed progress, status, and metrics across all 6 core modules
               </p>
             </div>
             <span className="text-[11px] sm:text-xs font-bold px-3 py-1 rounded-xl bg-slate-50 border border-slate-200 text-slate-700">
@@ -510,15 +510,14 @@ export default function DashboardPage() {
             </span>
           </div>
 
-          {/* 1. Mobile Adaptive Card-List View (Shown on < 640px) */}
+          {/* 1. Mobile Adaptive Card-List View (Shown on < 640px) - Informative Only */}
           <div className="block sm:hidden space-y-3">
             {modules.map((row) => {
               const RowIcon = row.icon;
               return (
                 <div
                   key={row.id}
-                  onClick={() => navigate(row.path, { state: { from: '/dashboard', fromName: 'Dashboard' } })}
-                  className="p-3.5 rounded-2xl bg-slate-50/70 border border-slate-200 cursor-pointer active:scale-[0.99] transition-transform space-y-2.5"
+                  className="p-3.5 rounded-2xl bg-slate-50/70 border border-slate-200 space-y-2.5"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
@@ -553,16 +552,14 @@ export default function DashboardPage() {
 
                   <div className="flex items-center justify-between pt-1 border-t border-slate-200/50 text-[11px]">
                     <span className="text-slate-400 text-[10px]">Updated {row.lastUpdated}</span>
-                    <span className="text-indigo-600 font-bold flex items-center gap-0.5">
-                      Open <ChevronRight className="w-3.5 h-3.5" />
-                    </span>
+                    <span className="text-slate-400 text-[10px] font-semibold">{row.category}</span>
                   </div>
                 </div>
               );
             })}
           </div>
 
-          {/* 2. Tablet & Desktop Responsive Table View (Shown on >= 640px) */}
+          {/* 2. Tablet & Desktop Responsive Table View (Shown on >= 640px) - Informative Only */}
           <div className="hidden sm:block overflow-x-auto -mx-6 px-6">
             <table className="w-full text-left border-collapse min-w-[650px]">
               <thead>
@@ -571,8 +568,7 @@ export default function DashboardPage() {
                   <th className="pb-3.5 font-bold">Category</th>
                   <th className="pb-3.5 font-bold">Current Metric</th>
                   <th className="pb-3.5 font-bold">Progress</th>
-                  <th className="pb-3.5 font-bold">Status</th>
-                  <th className="pb-3.5 pr-2 font-bold text-right">Action</th>
+                  <th className="pb-3.5 pr-2 font-bold text-right">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs">
@@ -581,19 +577,18 @@ export default function DashboardPage() {
                   return (
                     <tr
                       key={row.id}
-                      className="hover:bg-slate-50/70 transition-colors group cursor-pointer"
-                      onClick={() => navigate(row.path, { state: { from: '/dashboard', fromName: 'Dashboard' } })}
+                      className="hover:bg-slate-50/50 transition-colors"
                     >
                       {/* Module Column */}
                       <td className="py-4 pl-2 font-bold text-slate-900 flex items-center gap-3">
                         <div
-                          className="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-xs group-hover:scale-105 transition-transform shrink-0"
+                          className="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-xs shrink-0"
                           style={{ backgroundColor: row.color }}
                         >
                           <RowIcon className="w-4 h-4" />
                         </div>
                         <div>
-                          <div className="font-extrabold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                          <div className="font-extrabold text-slate-900">
                             {row.name}
                           </div>
                           <div className="text-[11px] text-slate-400 font-medium">
@@ -628,16 +623,9 @@ export default function DashboardPage() {
                       </td>
 
                       {/* Status Column */}
-                      <td className="py-4">
+                      <td className="py-4 pr-2 text-right">
                         <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${row.statusColor}`}>
                           {row.status}
-                        </span>
-                      </td>
-
-                      {/* Action Column */}
-                      <td className="py-4 pr-2 text-right">
-                        <span className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-700 group-hover:translate-x-0.5 transition-transform">
-                          Open <ArrowRight className="w-3.5 h-3.5" />
                         </span>
                       </td>
                     </tr>
